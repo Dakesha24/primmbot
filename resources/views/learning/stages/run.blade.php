@@ -127,6 +127,71 @@
             background: #94e2d5;
         }
 
+        .db-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .db-table {
+            margin-bottom: 1rem;
+        }
+
+        .db-table-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--cyan-400);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .db-table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 250px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+        }
+
+        .db-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        .db-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            font-weight: 600;
+            padding: 0.45rem 0.6rem;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .db-table td {
+            padding: 0.4rem 0.6rem;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .db-table tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .erd-container {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
         @media (max-width: 768px) {
             .run-layout {
                 grid-template-columns: 1fr;
@@ -187,6 +252,65 @@
                     </h3>
                     <p style="font-size:0.85rem;color:var(--blue-300);line-height:1.6;">
                         {{ $predictSubmission->answer_text }}</p>
+                </div>
+            @endif
+
+
+            @if (!empty($sandboxTables))
+                <div class="db-card" style="margin-top:0.8rem;">
+                    <h3
+                        style="font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                        <svg width="16" height="16" fill="none" stroke="var(--cyan-400)" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                        Database
+                    </h3>
+                    <div id="tables-container">
+                        <p style="font-size:0.8rem;color:#475569;font-style:italic;">Memuat tabel...</p>
+                    </div>
+
+                    <div class="erd-container">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <p
+                                style="font-size:0.7rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
+                                Relasi Tabel</p>
+                            <button onclick="document.getElementById('erdModal').style.display='flex'"
+                                style="padding:0.25rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#64748b;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;transition:all 0.2s;"
+                                onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.25)'"
+                                onmouseout="this.style.color='#64748b';this.style.borderColor='rgba(255,255,255,0.1)'">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                </svg>
+                                Fullscreen
+                            </button>
+                        </div>
+                        <div id="erd-small" style="text-align:center;"></div>
+                    </div>
+                </div>
+
+                {{-- Modal ERD --}}
+                <div id="erdModal"
+                    style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;"
+                    onclick="if(event.target===this)this.style.display='none'">
+                    <div
+                        style="background:linear-gradient(135deg,#0f2044,#142c5c);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2rem;max-width:700px;width:90%;max-height:85vh;overflow:auto;position:relative;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+                            <h3 style="font-size:1.1rem;font-weight:700;color:#fff;">Relasi Tabel</h3>
+                            <button onclick="document.getElementById('erdModal').style.display='none'"
+                                style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;"
+                                onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="erd-large" style="text-align:center;"></div>
+                    </div>
                 </div>
             @endif
         </div>
@@ -260,6 +384,21 @@
             </div>
         </div>
     </div>
+
+    {{-- Mermaid Library --}}
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1e3a5f',
+                primaryTextColor: '#cbd5e1',
+                lineColor: '#60a5fa',
+                primaryBorderColor: '#2563eb'
+            }
+        });
+    </script>
 @endsection
 
 @section('nav_prev')
@@ -296,8 +435,124 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const activityId = {{ $activity->id }};
+            const sandboxTables = @json($sandboxTables ?? []);
             const answerText = document.getElementById('answer-text');
             const sqlEditor = document.getElementById('sql-editor');
+
+            if (Object.keys(sandboxTables).length > 0) {
+                loadTables();
+                const erdBtn = document.querySelector('[onclick*="erdModal"]');
+                if (erdBtn) {
+                    erdBtn.addEventListener('click', () => setTimeout(() => renderErd('erd-large'), 100));
+                }
+            }
+
+            async function loadTables() {
+                const container = document.getElementById('tables-container');
+                if (!container) return;
+                const tableKeys = Object.keys(sandboxTables);
+
+                if (tableKeys.length === 0) {
+                    container.innerHTML = '<p style="font-size:0.8rem;color:#475569;">Tidak ada tabel terkait.</p>';
+                    return;
+                }
+
+                let h = '';
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    h += `<div class="db-table" id="table-view-${displayName}">
+                    <p class="db-table-title">${displayName}</p>
+                    <div class="db-table-scroll">
+                        <table id="table-data-${displayName}">
+                            <thead><tr>`;
+                    data.columns.forEach(col => h += `<th>${col.name}</th>`);
+                    h += `</tr></thead><tbody><tr><td colspan="${data.columns.length}" style="text-align:center; font-style:italic; color:#64748b;">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                  </div>`;
+                }
+                container.innerHTML = h;
+
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    try {
+                        const res = await fetch('{{ route('api.sql.run') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                query: `SELECT * FROM \`${data.real_name}\` LIMIT 10`,
+                                database_id: {{ $activity->sandbox_database_id ?? 'null' }}
+                            }),
+                        });
+                        const d2 = await res.json();
+                        const tbody = document.querySelector(`#table-data-${displayName} tbody`);
+
+                        if (d2.success && d2.rows.length > 0) {
+                            let tbodyHtml = '';
+                            d2.rows.forEach(r => {
+                                tbodyHtml += '<tr>';
+                                data.columns.forEach(col => {
+                                    tbodyHtml += `<td>${r[col.name] ?? 'NULL'}</td>`;
+                                });
+                                tbodyHtml += '</tr>';
+                            });
+                            tbody.innerHTML = tbodyHtml;
+                        } else if (d2.success) {
+                            tbody.innerHTML = `<tr><td colspan="${data.columns.length}" style="text-align:center; color:#64748b;">Tabel kosong.</td></tr>`;
+                        } else {
+                            tbody.innerHTML = `<tr><td colspan="${data.columns.length}" style="color:#f87171;">Gagal memuat.</td></tr>`;
+                        }
+                    } catch (e) {
+                        const tbody = document.querySelector(`#table-data-${displayName} tbody`);
+                        if (tbody) tbody.innerHTML = `<tr><td colspan="${data.columns.length}" style="color:#f87171;">Error koneksi.</td></tr>`;
+                    }
+                }
+
+                const dynamicErdCode = generateDynamicErd();
+                renderErd('erd-small', dynamicErdCode);
+            }
+
+            function generateDynamicErd() {
+                const tableKeys = Object.keys(sandboxTables);
+                if (tableKeys.length === 0) return "erDiagram\n    Database_Kosong";
+                let code = "erDiagram\n";
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    const safeName = displayName.replace(/\s+/g, '_');
+                    code += `    ${safeName} {\n`;
+                    data.columns.forEach(col => {
+                        let safeType = col.type.split('(')[0];
+                        code += `        ${safeType} ${col.name}\n`;
+                    });
+                    code += `    }\n`;
+                }
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    const safeName = displayName.replace(/\s+/g, '_');
+                    data.columns.forEach(col => {
+                        if (col.key === 'MUL' || col.name.startsWith('id_')) {
+                            const targetName = col.name.replace('id_', '');
+                            const hasTarget = tableKeys.find(k => k.toLowerCase() === targetName.toLowerCase());
+                            if (hasTarget) {
+                                const safeTarget = hasTarget.replace(/\s+/g, '_');
+                                code += `    ${safeTarget} ||--o{ ${safeName} : ${col.name}\n`;
+                            }
+                        }
+                    });
+                }
+                return code;
+            }
+
+            async function renderErd(elementId, code) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                try {
+                    const { svg } = await mermaid.render(elementId + '-svg', code);
+                    el.innerHTML = svg;
+                } catch (err) {
+                    el.innerHTML = '<span style="color:#f87171">Gagal memuat ERD</span>';
+                }
+            }
             const btnRun = document.getElementById('btn-run');
             const btnCek = document.getElementById('btn-cek');
             const btnSubmit = document.getElementById('btn-submit');
@@ -324,7 +579,8 @@
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({
-                                query
+                                query,
+                                database_id: {{ $activity->sandbox_database_id ?? 'null' }}
                             }),
                         });
                         const data = await res.json();

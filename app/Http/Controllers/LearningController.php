@@ -8,6 +8,7 @@ use App\Models\MaterialCompletion;
 use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class LearningController extends Controller
 {
@@ -82,6 +83,29 @@ class LearningController extends Controller
         $currentNumber = $currentIndex + 1;
         $totalSiblings = $siblings->count();
 
+        $sandboxTables = [];
+        if ($activity->sandbox_database_id) {
+            $activity->load('sandboxDatabase.sandboxTables');
+            if ($activity->sandboxDatabase) {
+                foreach ($activity->sandboxDatabase->sandboxTables as $table) {
+                    try {
+                        $columns = DB::connection('sandbox')->select("DESCRIBE `{$table->table_name}`");
+                        $sandboxTables[$table->display_name] = [
+                            'real_name' => $table->table_name,
+                            'columns' => array_map(fn($col) => [
+                                'name' => $col->Field,
+                                'type' => $col->Type,
+                                'key' => $col->Key,
+                            ], $columns)
+                        ];
+                    } catch (\Exception $e) {
+                        // Abaikan jika tabel fisik belum dibuat di database
+                    }
+                }
+            }
+        }
+        // ---------------------------------------------------
+
         // Tentukan view berdasarkan stage
         $viewMap = [
             'predict' => 'learning.stages.predict',
@@ -103,7 +127,8 @@ class LearningController extends Controller
             'prevActivity',
             'nextActivity',
             'currentNumber',
-            'totalSiblings'
+            'totalSiblings',
+            'sandboxTables',
         ));
     }
 

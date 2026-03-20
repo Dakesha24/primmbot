@@ -594,6 +594,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const activityId = {{ $activity->id }};
             const defaultCode = @json($activity->editor_default_code ?? '');
+            const sandboxTables = @json($sandboxTables ?? []); // Data tabel dari controller
+
             const answerText = document.getElementById('answer-text');
             const sqlEditor = document.getElementById('sql-editor');
             const btnRun = document.getElementById('btn-run');
@@ -602,23 +604,17 @@
             const btnSubmit = document.getElementById('btn-submit');
             const sqlOutput = document.getElementById('sql-output');
 
-            // Load tabel database
             loadTables();
 
-            // Auto-run on load
             if (sqlEditor.value.trim()) runQuery();
-
-            // Auto-focus editor
             sqlEditor.focus();
             sqlEditor.setSelectionRange(sqlEditor.value.length, sqlEditor.value.length);
 
-            // RESET
             btnReset.addEventListener('click', function() {
                 sqlEditor.value = defaultCode;
                 runQuery();
             });
 
-            // RUN
             btnRun.addEventListener('click', runQuery);
 
             async function runQuery() {
@@ -627,9 +623,11 @@
                     sqlOutput.innerHTML = '<span style="color:#f87171;">Query kosong.</span>';
                     return;
                 }
+
                 btnRun.disabled = true;
                 btnRun.textContent = 'Running...';
                 sqlOutput.innerHTML = '<span style="color:#475569;">Mengeksekusi...</span>';
+
                 try {
                     const res = await fetch('{{ route('api.sql.run') }}', {
                         method: 'POST',
@@ -639,10 +637,13 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            query
+                            query: query,
+                            // Kirim ID database untuk keperluan validasi keamanan di backend
+                            database_id: {{ $activity->sandbox_database_id ?? 'null' }}
                         }),
                     });
                     const data = await res.json();
+
                     if (data.success && data.rows.length > 0) {
                         let h = '<table><thead><tr>';
                         data.columns.forEach(c => h += '<th>' + c + '</th>');
@@ -652,8 +653,8 @@
                             data.columns.forEach(c => h += '<td>' + (r[c] ?? 'NULL') + '</td>');
                             h += '</tr>';
                         });
-                        h += '</tbody></table><p style="margin-top:0.4rem;font-size:0.68rem;color:#64748b;">' +
-                            data.row_count + ' baris</p>';
+                        h +=
+                        `</tbody></table><p style="margin-top:0.4rem;font-size:0.68rem;color:#64748b;">${data.row_count} baris</p>`;
                         sqlOutput.innerHTML = h;
                     } else if (data.success) {
                         sqlOutput.innerHTML = '<span style="color:#64748b;">Tidak ada data.</span>';
@@ -667,76 +668,143 @@
                 btnRun.textContent = 'Run ▶';
             }
 
-            // Load tables
             async function loadTables() {
                 const container = document.getElementById('tables-container');
-                try {
-                    const res = await fetch('{{ route('api.sql.tables') }}', {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        let h = '';
-                        const showTables = ['buku', 'penerbit', 'penulis'];
-                        for (const tbl of showTables) {
-                            if (!data.tables[tbl]) continue;
-                            h += '<div class="db-table"><p class="db-table-title">' + tbl +
-                                '</p><div class="db-table-scroll"><table><thead><tr>';
-                            data.tables[tbl].forEach(col => h += '<th>' + col.name + '</th>');
-                            h += '</tr></thead></table></div></div>';
-                        }
-                        // Fetch data per tabel
-                        for (const tbl of showTables) {
-                            if (!data.tables[tbl]) continue;
-                            try {
-                                const r2 = await fetch('{{ route('api.sql.run') }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        query: 'SELECT * FROM ' + tbl
-                                    }),
+                const tableKeys = Object.keys(sandboxTables);
+
+                if (tableKeys.length === 0) {
+                    container.innerHTML =
+                        '<p style="font-size:0.8rem;color:#475569;">Tidak ada tabel terkait.</p>';
+                    return;
+                }
+
+                // Render struktur tabel HTML awal
+                let h = '';
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    h += `<div class="db-table" id="table-view-${displayName}">
+                        <p class="db-table-title">${displayName}</p>
+                        <div class="db-table-scroll">
+                            <table id="table-data-${displayName}">
+                                <thead><tr>`;
+                    data.columns.forEach(col => h += `<th>${col.name}</th>`);
+                    h += `</tr></thead><tbody><tr><td colspan="${data.columns.length}" style="text-align:center; font-style:italic; color:#64748b;">Memuat data...</td></tr></tbody>
+                            </table>
+                        </div>
+                      </div>`;
+                }
+                container.innerHTML = h;
+
+                // Fetch data per tabel secara asinkron
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    try {
+                        const res = await fetch('{{ route('api.sql.run') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                query: `SELECT * FROM \`${data.real_name}\` LIMIT 10`,
+                                database_id: {{ $activity->sandbox_database_id ?? 'null' }}
+                            }),
+                        });
+
+                        const d2 = await res.json();
+                        const tbody = document.querySelector(`#table-data-${displayName} tbody`);
+
+                        if (d2.success && d2.rows.length > 0) {
+                            let tbodyHtml = '';
+                            d2.rows.forEach(r => {
+                                tbodyHtml += '<tr>';
+                                data.columns.forEach(col => {
+                                    tbodyHtml += `<td>${r[col.name] ?? 'NULL'}</td>`;
                                 });
-                                const d2 = await r2.json();
-                                if (d2.success && d2.rows.length > 0) {
-                                    let th = '<div class="db-table"><p class="db-table-title">' + tbl +
-                                        '</p><div class="db-table-scroll"><table><thead><tr>';
-                                    d2.columns.forEach(c => th += '<th>' + c + '</th>');
-                                    th += '</tr></thead><tbody>';
-                                    d2.rows.forEach(r => {
-                                        th += '<tr>';
-                                        d2.columns.forEach(c => th += '<td>' + (r[c] ?? 'NULL') +
-                                            '</td>');
-                                        th += '</tr>';
-                                    });
-                                    th += '</tbody></table></div></div>';
-                                    h = h.replace(new RegExp(
-                                        '<div class="db-table"><p class="db-table-title">' + tbl +
-                                        '</p>.*?</div></div>'), th);
-                                }
-                            } catch (e) {}
+                                tbodyHtml += '</tr>';
+                            });
+                            tbody.innerHTML = tbodyHtml;
+                        } else if (d2.success) {
+                            tbody.innerHTML =
+                                `<tr><td colspan="${data.columns.length}" style="text-align:center; color:#64748b;">Tabel kosong.</td></tr>`;
+                        } else {
+                            tbody.innerHTML =
+                                `<tr><td colspan="${data.columns.length}" style="color:#f87171;">Gagal memuat.</td></tr>`;
                         }
-                        container.innerHTML = h ||
-                            '<p style="font-size:0.8rem;color:#475569;">Tidak ada tabel.</p>';
+                    } catch (e) {
+                        const tbody = document.querySelector(`#table-data-${displayName} tbody`);
+                        if (tbody) tbody.innerHTML =
+                            `<tr><td colspan="${data.columns.length}" style="color:#f87171;">Error koneksi.</td></tr>`;
                     }
-                } catch (e) {
-                    container.innerHTML = '<p style="font-size:0.8rem;color:#f87171;">Gagal memuat tabel.</p>';
                 }
             }
 
-            // CEK
-            btnCek.addEventListener('click', async function() {
-                const text = answerText.value.trim();
-                const code = sqlEditor.value.trim();
-                if (!text && !code) {
-                    showFB('Tulis jawabanmu dulu.', 'red');
-                    return;
+            // Generate script Mermaid ERD secara dinamis berdasarkan kolom
+            function generateDynamicErd() {
+                const tableKeys = Object.keys(sandboxTables);
+                if (tableKeys.length === 0) return "erDiagram\n    Database_Kosong";
+
+                let code = "erDiagram\n";
+
+                // Generate entitas dan atribut
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    const safeName = displayName.replace(/\s+/g, '_');
+                    code += `    ${safeName} {\n`;
+                    data.columns.forEach(col => {
+                        let safeType = col.type.split('(')[0];
+                        code += `        ${safeType} ${col.name}\n`;
+                    });
+                    code += `    }\n`;
                 }
+
+                // Generate relasi sederhana berdasarkan penamaan 'id_tabel'
+                for (const [displayName, data] of Object.entries(sandboxTables)) {
+                    const safeName = displayName.replace(/\s+/g, '_');
+                    data.columns.forEach(col => {
+                        if (col.key === 'MUL' || col.name.startsWith('id_')) {
+                            const targetName = col.name.replace('id_', '');
+                            const hasTarget = tableKeys.find(k => k.toLowerCase() === targetName
+                                .toLowerCase());
+                            if (hasTarget) {
+                                const safeTarget = hasTarget.replace(/\s+/g, '_');
+                                code += `    ${safeTarget} ||--o{ ${safeName} : ${col.name}\n`;
+                            }
+                        }
+                    });
+                }
+                return code;
+            }
+
+            // --- MERMAID INITIALIZATION ---
+            // Hapus atau abaikan const erdCode = `erDiagram...` yang lama
+            const dynamicErdCode = generateDynamicErd();
+
+            async function renderErd(elementId) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                try {
+                    const {
+                        svg
+                    } = await mermaid.render(elementId + '-svg', dynamicErdCode);
+                    el.innerHTML = svg;
+                } catch (err) {
+                    el.innerHTML = '<span style="color:#f87171">Gagal memuat ERD</span>';
+                }
+            }
+
+            renderErd('erd-small');
+
+            document.getElementById('erdModal').addEventListener('transitionend', () => renderErd('erd-large'));
+            const erdBtn = document.querySelector('[onclick*="erdModal"]');
+            if (erdBtn) {
+                erdBtn.addEventListener('click', () => setTimeout(() => renderErd('erd-large'), 100));
+            }
+
+            // CEK & SUBMIT LOGIC (Tidak ada perubahan signifikan, disederhanakan)
+            btnCek.addEventListener('click', async function() {
+                const text = answerText ? answerText.value.trim() : '';
+                const code = sqlEditor.value.trim();
+                if (!text && !code) return showFB('Tulis jawabanmu dulu.', 'red');
+
                 btnCek.disabled = true;
                 btnCek.textContent = 'Memeriksa...';
                 try {
@@ -767,15 +835,12 @@
                 btnCek.textContent = 'Cek';
             });
 
-            // SUBMIT
             btnSubmit.addEventListener('click', async function() {
-                const text = answerText.value.trim();
+                const text = answerText ? answerText.value.trim() : '';
                 const code = sqlEditor.value.trim();
-                if (!text && !code) {
-                    showFB('Tulis jawabanmu dulu.', 'red');
-                    return;
-                }
+                if (!text && !code) return showFB('Tulis jawabanmu dulu.', 'red');
                 if (!confirm('Yakin ingin submit?')) return;
+
                 btnSubmit.disabled = true;
                 btnSubmit.textContent = 'Mengirim...';
                 try {
@@ -797,11 +862,9 @@
                         showFB('✅ ' + data.feedback + ' (Skor: ' + data.score + '/100)', 'green');
                         addChat('assistant', '✅ ' + data.feedback);
                         btnSubmit.textContent = 'Selesai ✓';
-                        btnSubmit.disabled = true;
                         btnSubmit.style.background = '#16a34a';
-                        btnSubmit.style.boxShadow = 'none';
                     } else if (data.success) {
-                        showFB('⚠️ ' + data.feedback + ' Perbaiki jawabanmu.', 'yellow');
+                        showFB('⚠️ ' + data.feedback, 'yellow');
                         addChat('assistant', '⚠️ ' + data.feedback);
                         btnSubmit.disabled = false;
                         btnSubmit.textContent = 'Submit';
@@ -822,14 +885,16 @@
                 if (!box) {
                     box = document.createElement('div');
                     box.id = 'feedback-box';
-                    document.querySelector('div[style*="border-top"]').appendChild(box);
+                    // Attach above the VA card
+                    document.querySelector('.mod-right').insertBefore(box, document.querySelector(
+                        '.content-card:last-child'));
                 }
                 const c = {
                     red: 'background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#fca5a5;',
                     yellow: 'background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.2);color:#fde047;',
                     green: 'background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#86efac;'
                 };
-                box.style.cssText = 'margin-top:1rem;padding:0.8rem;border-radius:10px;font-size:0.85rem;' + (c[
+                box.style.cssText = 'margin-bottom:1rem;padding:0.8rem;border-radius:10px;font-size:0.85rem;' + (c[
                     color] || c.yellow);
                 box.textContent = msg;
             }
@@ -853,7 +918,6 @@
                 btnSubmit.textContent = 'Selesai ✓';
                 btnSubmit.disabled = true;
                 btnSubmit.style.background = '#16a34a';
-                btnSubmit.style.boxShadow = 'none';
             @endif
         });
     </script>
