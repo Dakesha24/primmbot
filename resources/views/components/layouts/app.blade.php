@@ -449,7 +449,9 @@
                     class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
                 @if (Auth::user()->profile && Auth::user()->profile->isComplete())
                     <a href="{{ route('courses.index') }}"
-                        class="{{ request()->routeIs('courses.*') || request()->routeIs('chapters.*') ? 'active' : '' }}">Kelas</a>
+                        class="{{ request()->routeIs('courses.*') || request()->routeIs('chapters.*') ? 'active' : '' }}">LKPD</a>
+                    <a href="{{ route('hasil-belajar.index') }}"
+                        class="{{ request()->routeIs('hasil-belajar.*') ? 'active' : '' }}">Hasil Belajar</a>
                 @endif
             </div>
         </div>
@@ -457,10 +459,13 @@
             <div class="nav-user" onclick="document.getElementById('userDropdown').classList.toggle('show')">
                 <div class="nav-avatar">
                     @if (Auth::user()->profile && Auth::user()->profile->avatar)
-                        <img src="{{ asset('storage/' . Auth::user()->profile->avatar) }}"
+                        <img src="{{ Auth::user()->profile->avatarUrl() }}"
                             style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
                     @else
-                        {{ strtoupper(substr(Auth::user()->profile->full_name ?? Auth::user()->username, 0, 1)) }}
+                        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
                     @endif
                 </div>
                 <span class="nav-username">{{ Auth::user()->profile->full_name ?? Auth::user()->username }}</span>
@@ -468,12 +473,23 @@
                     <path d="M6 9l6 6 6-6" />
                 </svg>
 
-                <div class="dropdown" id="userDropdown">
-                    <a href="{{ route('profile.edit') }}">Profil Saya</a>
+                <div class="dropdown" id="userDropdown" onclick="event.stopPropagation()">
+                    <a href="{{ route('profile.edit') }}" style="display:flex;align-items:center;gap:0.5rem;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profil Saya
+                    </a>
                     <div class="divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="logout-btn">Keluar</button>
+                        <button type="submit" class="logout-btn" style="display:flex;align-items:center;gap:0.5rem;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Keluar
+                        </button>
                     </form>
                 </div>
             </div>
@@ -482,6 +498,15 @@
 
     <div class="main-content">
         <div class="content-wrapper">
+            @if(session('success'))
+                <div class="alert alert-success fade-up">{{ session('success') }}</div>
+            @endif
+            @if(session('warning'))
+                <div class="alert alert-warning fade-up">{{ session('warning') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-error fade-up">{{ session('error') }}</div>
+            @endif
             {{ $slot }}
         </div>
     </div>

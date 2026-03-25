@@ -129,11 +129,11 @@ JOIN penerbit ON buku.id_penerbit = penerbit.id_penerbit;',
             'order' => 6,
         ]);
 
-        // ==================== MODIFIED ====================
+        // ==================== MODIFY ====================
         // Level: Mudah
         Activity::create([
             'chapter_id' => $chapterId,
-            'stage' => 'modified',
+            'stage' => 'modify',
             'level' => 'mudah',
             'description' => 'Jelaskan bagian kode mana yang kamu ubah untuk melakukan penyaringan tersebut, dan mengapa kamu menggunakan perintah itu?',
             'question_text' => 'Ubahlah kode SQL tersebut agar hanya menampilkan kolom judul_buku saja, tanpa kolom nama_penerbit.',
@@ -155,7 +155,7 @@ JOIN penerbit ON buku.id_penerbit = penerbit.id_penerbit;',
         // Level: Sedang
         Activity::create([
             'chapter_id' => $chapterId,
-            'stage' => 'modified',
+            'stage' => 'modify',
             'level' => 'sedang',
             'description' => 'Jelaskan bagian kode mana yang kamu tambahkan atau ubah, dan mengapa kamu menggunakan perintah tersebut?',
             'question_text' => 'Modifikasi query agar menampilkan judul_buku dan nama_penerbit, tetapi hanya untuk buku yang diterbitkan oleh "Gramedia".',
@@ -175,7 +175,7 @@ JOIN penerbit ON buku.id_penerbit = penerbit.id_penerbit;',
         // Level: Tantang
         Activity::create([
             'chapter_id' => $chapterId,
-            'stage' => 'modified',
+            'stage' => 'modify',
             'level' => 'tantang',
             'description' => 'Bagaimana caramu menentukan kolom mana yang menjadi penghubung (key) antar kedua tabel tersebut?',
             'question_text' => 'Modifikasi query agar menampilkan judul_buku, nama_penerbit, dan juga nama_penulis dari tabel penulis. Tabel penulis memiliki kolom id_penulis dan nama_penulis.',

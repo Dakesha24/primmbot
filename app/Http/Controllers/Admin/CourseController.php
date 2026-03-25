@@ -4,45 +4,102 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::withCount('chapters')->orderBy('order')->get();
-        return view('admin.courses.index', compact('courses'));
+        $courses    = Course::with('kelas.school')->withCount('chapters')->orderBy('order')->get();
+        $kelasList  = Kelas::with(['school', 'tahunAjaran'])->orderBy('school_id')->orderBy('name')->get();
+        return view('admin.courses.index', compact('courses', 'kelasList'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'order' => 'required|integer|min:0',
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'order'        => 'required|integer|min:1',
+            'kelas_id'     => 'nullable|exists:kelas,id',
+            'cover_image'  => 'nullable|image|max:2048',
         ]);
 
-        Course::create($request->only('title', 'description', 'order'));
+        $newOrder = (int) $request->order;
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil ditambahkan.');
+        // Geser semua kelas yang urutannya >= newOrder ke bawah
+        Course::where('order', '>=', $newOrder)->increment('order');
+
+        $coverPath = $request->hasFile('cover_image')
+            ? $request->file('cover_image')->store('courses/covers', 'public')
+            : null;
+
+        Course::create([
+            'title'        => $request->title,
+            'description'  => $request->description,
+            'order'        => $newOrder,
+            'kelas_id'     => $request->kelas_id,
+            'cover_image'  => $coverPath,
+        ]);
+
+        return redirect()->route('admin.courses.index')->with('success', 'LKPD berhasil ditambahkan.');
     }
 
     public function update(Request $request, Course $course)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'order' => 'required|integer|min:0',
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'order'        => 'required|integer|min:1',
+            'kelas_id'     => 'nullable|exists:kelas,id',
+            'cover_image'  => 'nullable|image|max:2048',
+            'remove_cover' => 'nullable|boolean',
         ]);
 
-        $course->update($request->only('title', 'description', 'order'));
+        $newOrder = (int) $request->order;
+        $oldOrder = $course->order;
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diperbarui.');
+        if ($newOrder !== $oldOrder) {
+            if ($newOrder < $oldOrder) {
+                Course::where('id', '!=', $course->id)
+                    ->whereBetween('order', [$newOrder, $oldOrder - 1])
+                    ->increment('order');
+            } else {
+                Course::where('id', '!=', $course->id)
+                    ->whereBetween('order', [$oldOrder + 1, $newOrder])
+                    ->decrement('order');
+            }
+        }
+
+        $coverPath = $course->cover_image;
+
+        if ($request->hasFile('cover_image')) {
+            if ($coverPath) Storage::disk('public')->delete($coverPath);
+            $coverPath = $request->file('cover_image')->store('courses/covers', 'public');
+        } elseif ($request->boolean('remove_cover') && $coverPath) {
+            Storage::disk('public')->delete($coverPath);
+            $coverPath = null;
+        }
+
+        $course->update([
+            'title'        => $request->title,
+            'description'  => $request->description,
+            'order'        => $newOrder,
+            'kelas_id'     => $request->kelas_id,
+            'cover_image'  => $coverPath,
+        ]);
+
+        return redirect()->route('admin.courses.index')->with('success', 'LKPD berhasil diperbarui.');
     }
 
     public function destroy(Course $course)
     {
+        if ($course->cover_image) {
+            Storage::disk('public')->delete($course->cover_image);
+        }
         $course->delete();
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil dihapus.');
+        return redirect()->route('admin.courses.index')->with('success', 'LKPD berhasil dihapus.');
     }
 }

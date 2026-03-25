@@ -17,14 +17,14 @@
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #f0f2f7;
-            color: #1e293b;
+            background: #f4f5f7;
+            color: #1a2332;
             min-height: 100vh;
         }
 
         /* ── Topbar ── */
         .admin-topbar {
-            height: 64px;
+            height: 58px;
             background: #0f1b3d;
             position: fixed;
             top: 0;
@@ -34,17 +34,18 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 32px;
+            padding: 0 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
         .topbar-left {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .topbar-brand {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
             color: #fff;
             letter-spacing: -0.02em;
@@ -53,56 +54,57 @@
         .topbar-badge {
             font-size: 9px;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.6);
-            background: rgba(255, 255, 255, 0.1);
-            padding: 3px 10px;
-            border-radius: 20px;
+            color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.08);
+            padding: 3px 8px;
+            border-radius: 4px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
 
         .topbar-page {
-            font-size: 15px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.85);
-            margin-left: 24px;
-            padding-left: 24px;
-            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            margin-left: 16px;
+            padding-left: 16px;
+            border-left: 1px solid rgba(255,255,255,0.1);
         }
 
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .topbar-user {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: rgba(255, 255, 255, 0.7);
+            gap: 8px;
+            color: rgba(255,255,255,0.75);
             font-size: 13px;
+            font-weight: 500;
         }
 
         .topbar-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.12);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #fff;
         }
 
         .btn-logout {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.7);
-            padding: 7px 16px;
-            border-radius: 8px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.6);
+            padding: 6px 14px;
+            border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
             font-family: inherit;
@@ -111,46 +113,47 @@
         }
 
         .btn-logout:hover {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239,68,68,0.12);
+            border-color: rgba(239,68,68,0.3);
             color: #fca5a5;
         }
 
         /* ── Sidebar ── */
         .admin-sidebar {
-            width: 250px;
+            width: 240px;
             background: #fff;
-            border-right: 1px solid #e4e8f1;
+            border-right: 1px solid #e8eaf0;
             position: fixed;
-            top: 64px;
+            top: 58px;
             left: 0;
             bottom: 0;
             z-index: 50;
             display: flex;
             flex-direction: column;
-            padding: 24px 14px;
+            padding: 20px 10px;
+            overflow-y: auto;
         }
 
         .nav-label {
             font-size: 10px;
             font-weight: 700;
-            color: #a0aec0;
+            color: #b0b8c8;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            padding: 14px 14px 8px;
+            padding: 14px 12px 6px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 11px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            color: #64748b;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 5px;
+            color: #4a5568;
             text-decoration: none;
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 500;
-            transition: all 0.15s;
+            transition: all 0.12s;
         }
 
         .nav-item:hover {
@@ -164,27 +167,56 @@
         }
 
         .nav-item svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             flex-shrink: 0;
+            opacity: 0.75;
         }
+
+        .nav-item.active svg { opacity: 1; }
 
         /* ── Content ── */
         .admin-content {
-            margin-left: 250px;
-            margin-top: 64px;
-            padding: 32px;
-            min-height: calc(100vh - 64px);
+            margin-left: 240px;
+            margin-top: 58px;
+            padding: 28px 32px;
+            min-height: calc(100vh - 58px);
+        }
+
+        /* ── Page Header ── */
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f1b3d;
+            margin-bottom: 2px;
+        }
+
+        .page-header p {
+            font-size: 13px;
+            color: #6b7a99;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: #fff;
+            border: 1px solid #e8eaf0;
+            border-radius: 6px;
+            padding: 24px;
         }
 
         /* ── Alert ── */
         .alert-success {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
-            color: #15803d;
-            padding: 12px 18px;
-            border-radius: 10px;
-            margin-bottom: 24px;
+            border-left: 3px solid #16a34a;
+            color: #166534;
+            padding: 11px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
             font-size: 13px;
             font-weight: 600;
             display: flex;
@@ -192,13 +224,25 @@
             gap: 8px;
         }
 
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 3px solid #dc2626;
+            color: #991b1b;
+            padding: 11px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
         /* ── Modal ── */
         .modal-backdrop {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 27, 61, 0.45);
-            backdrop-filter: blur(6px);
+            background: rgba(10,18,40,0.5);
+            backdrop-filter: blur(4px);
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -210,60 +254,58 @@
 
         .modal-box {
             background: #fff;
-            border-radius: 18px;
-            padding: 32px;
+            border-radius: 8px;
+            padding: 28px 32px;
             width: 100%;
-            max-width: 520px;
-            box-shadow: 0 32px 64px rgba(15, 27, 61, 0.18);
+            max-width: 500px;
+            box-shadow: 0 20px 48px rgba(10,18,40,0.18);
+            border: 1px solid #e8eaf0;
         }
 
         .modal-box h2 {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             color: #0f1b3d;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .modal-close {
             float: right;
             background: none;
             border: none;
-            font-size: 22px;
+            font-size: 20px;
             color: #94a3b8;
             cursor: pointer;
             line-height: 1;
-            margin-top: -4px;
+            margin-top: -2px;
         }
 
-        .modal-close:hover {
-            color: #0f1b3d;
-        }
+        .modal-close:hover { color: #0f1b3d; }
 
         /* ── Form ── */
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #64748b;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
+            color: #4a5568;
+            margin-bottom: 5px;
+            letter-spacing: 0.02em;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 9px 12px;
+            border: 1.5px solid #dde1ea;
+            border-radius: 5px;
+            font-size: 13.5px;
             font-family: inherit;
-            color: #1e293b;
+            color: #1a2332;
             background: #fff;
             transition: all 0.15s;
         }
@@ -273,30 +315,28 @@
         .form-group select:focus {
             outline: none;
             border-color: #0f1b3d;
-            box-shadow: 0 0 0 3px rgba(15, 27, 61, 0.08);
+            box-shadow: 0 0 0 3px rgba(15,27,61,0.07);
         }
 
-        .form-group textarea {
-            resize: vertical;
-        }
+        .form-group textarea { resize: vertical; }
 
-        .form-group input[type="number"] {
-            width: 120px;
-        }
+        .form-group input[type="number"] { width: 120px; }
 
         .form-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: flex-end;
-            margin-top: 26px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f2f7;
         }
 
         .btn-primary {
             background: #0f1b3d;
             color: #fff;
-            padding: 10px 28px;
+            padding: 9px 24px;
             border: none;
-            border-radius: 10px;
+            border-radius: 5px;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
@@ -304,33 +344,34 @@
             transition: background 0.15s;
         }
 
-        .btn-primary:hover {
-            background: #1a2d5a;
-        }
+        .btn-primary:hover { background: #1a2d5a; }
 
         .btn-secondary {
-            background: #f1f5f9;
-            color: #64748b;
-            padding: 10px 22px;
-            border: none;
-            border-radius: 10px;
+            background: #f4f5f7;
+            color: #4a5568;
+            padding: 9px 20px;
+            border: 1px solid #dde1ea;
+            border-radius: 5px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
+            transition: all 0.12s;
         }
 
         .btn-secondary:hover {
-            background: #e2e8f0;
+            background: #e8eaf0;
+            color: #1a2332;
         }
 
         .form-errors {
             background: #fef2f2;
             border: 1px solid #fecaca;
+            border-left: 3px solid #dc2626;
             color: #991b1b;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 11px 14px;
+            border-radius: 4px;
+            margin-bottom: 18px;
             font-size: 13px;
         }
     </style>
@@ -360,7 +401,7 @@
 
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <span class="nav-label">Menu</span>
+        <span class="nav-label">Utama</span>
 
         <a href="{{ route('admin.dashboard') }}"
             class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -374,34 +415,16 @@
             Dashboard
         </a>
 
+        <span class="nav-label">Konten</span>
+
         <a href="{{ route('admin.courses.index') }}"
-            class="nav-item {{ request()->routeIs('admin.courses.*') ? 'active' : '' }}">
+            class="nav-item {{ request()->routeIs('admin.courses.*') || request()->routeIs('admin.chapters.*') ? 'active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
-            Kelola Kelas
-        </a>
-
-        <a href="{{ route('admin.students.index') }}"
-            class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            Kelola Siswa
-        </a>
-
-        <a href="#" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-            Hasil Kelas
+            Kelola LKPD
         </a>
 
         <a href="{{ route('admin.sandbox.index') }}"
@@ -415,13 +438,61 @@
             Kelola Database
         </a>
 
-        <a href="#" class="nav-item">
+        <span class="nav-label">Siswa</span>
+
+        <a href="{{ route('admin.students.index') }}"
+            class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-            Pengumuman
+            Kelola Siswa
+        </a>
+
+        <a href="{{ route('admin.hasil-kelas.index') }}"
+            class="nav-item {{ request()->routeIs('admin.hasil-kelas.*') ? 'active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            Hasil LKPD
+        </a>
+
+        <span class="nav-label">Pengaturan</span>
+
+        <a href="{{ route('admin.schools.index') }}"
+            class="nav-item {{ request()->routeIs('admin.schools.*') ? 'active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Sekolah
+        </a>
+
+        <a href="{{ route('admin.tahun-ajaran.index') }}"
+            class="nav-item {{ request()->routeIs('admin.tahun-ajaran.*') ? 'active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Tahun Ajaran
+        </a>
+
+        <a href="{{ route('admin.kelas.index') }}"
+            class="nav-item {{ request()->routeIs('admin.kelas.*') ? 'active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/>
+            </svg>
+            Kelas
         </a>
     </aside>
 

@@ -14,25 +14,44 @@ class ActivityController extends Controller
     public function create(Course $course, Chapter $chapter, Request $request)
     {
         $stage = $request->query('stage', 'predict');
+        $level = $request->query('level');
         $sandboxDatabases = SandboxDatabase::orderBy('name')->get();
-        return view('admin.activities.create', compact('course', 'chapter', 'stage', 'sandboxDatabases'));
+        $view = match($stage) {
+            'predict'     => 'admin.activities.create-predict',
+            'run'         => 'admin.activities.create-run',
+            'investigate' => 'admin.activities.create-investigate',
+            'modify'      => 'admin.activities.create-modify',
+            'make'        => 'admin.activities.create-make',
+            default       => 'admin.activities.create',
+        };
+        return view($view, compact('course', 'chapter', 'stage', 'level', 'sandboxDatabases'));
     }
 
     public function store(Request $request, Course $course, Chapter $chapter)
     {
         $rules = [
-            'stage' => 'required|in:predict,run,investigate,modified,make',
-            'question_text' => 'required|string',
-            'order' => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'code_snippet' => 'nullable|string',
-            'editor_default_code' => 'nullable|string',
-            'expected_output' => 'nullable|json',
-            'level' => 'nullable|string',
-            'sandbox_database_id' => 'nullable|exists:sandbox_databases,id',
+            'stage'              => 'required|in:predict,run,investigate,modify,make',
+            'question_text'      => 'required|string',
+            'description'        => 'nullable|string',
+            'code_snippet'       => 'nullable|string',
+            'editor_default_code'=> 'nullable|string',
+            'reference_sql'      => 'nullable|string',
+            'expected_output'    => 'nullable|json',
+            'level'              => 'nullable|string',
+            'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
         ];
 
         $validated = $request->validate($rules);
+
+        // Auto-assign level untuk modify/make: Level 1, 2, 3, dst
+        if (in_array($validated['stage'], ['modify', 'make'])) {
+            $count = $chapter->activities()->where('stage', $validated['stage'])->count();
+            $validated['level'] = (string)($count + 1);
+        }
+
+        // Auto-assign order
+        $maxOrder = $chapter->activities()->max('order') ?? 0;
+        $validated['order'] = $maxOrder + 1;
 
         $chapter->activities()->create($validated);
 
@@ -44,21 +63,29 @@ class ActivityController extends Controller
     public function edit(Course $course, Chapter $chapter, Activity $activity)
     {
         $sandboxDatabases = SandboxDatabase::orderBy('name')->get();
-        return view('admin.activities.edit', compact('course', 'chapter', 'activity', 'sandboxDatabases'));
+        $view = match($activity->stage) {
+            'predict'     => 'admin.activities.edit-predict',
+            'run'         => 'admin.activities.edit-run',
+            'investigate' => 'admin.activities.edit-investigate',
+            'modify'      => 'admin.activities.edit-modify',
+            'make'        => 'admin.activities.edit-make',
+            default       => 'admin.activities.edit',
+        };
+        return view($view, compact('course', 'chapter', 'activity', 'sandboxDatabases'));
     }
 
     public function update(Request $request, Course $course, Chapter $chapter, Activity $activity)
     {
         $rules = [
-            'stage' => 'required|in:predict,run,investigate,modified,make',
-            'question_text' => 'required|string',
-            'order' => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'code_snippet' => 'nullable|string',
-            'editor_default_code' => 'nullable|string',
-            'expected_output' => 'nullable|json',
-            'level' => 'nullable|string',
-            'sandbox_database_id' => 'nullable|exists:sandbox_databases,id',
+            'stage'              => 'required|in:predict,run,investigate,modify,make',
+            'question_text'      => 'required|string',
+            'description'        => 'nullable|string',
+            'code_snippet'       => 'nullable|string',
+            'editor_default_code'=> 'nullable|string',
+            'reference_sql'      => 'nullable|string',
+            'expected_output'    => 'nullable|json',
+            'level'              => 'nullable|string',
+            'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
         ];
 
         $validated = $request->validate($rules);

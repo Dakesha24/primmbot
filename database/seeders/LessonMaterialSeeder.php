@@ -35,7 +35,7 @@ class LessonMaterialSeeder extends Seeder
     <li><strong>Pahami tujuan pembelajaran</strong> agar kamu tahu apa yang diharapkan setelah menyelesaikan sesi.</li>
     <li><strong>Pastikan prasyarat tools</strong> sudah terpenuhi (laptop, browser, koneksi internet).</li>
     <li><strong>Baca ringkasan materi</strong> untuk memahami konsep dasar Equi Join sebelum mulai mengerjakan.</li>
-    <li><strong>Kerjakan tahap PRIMM secara berurutan</strong>: Predict → Run → Investigate → Modified → Make.</li>
+    <li><strong>Kerjakan tahap PRIMM secara berurutan</strong>: Predict → Run → Investigate → Modify → Make.</li>
     <li><strong>Gunakan Virtual Assistant</strong> jika kamu membutuhkan petunjuk atau penjelasan tambahan. Asisten tidak akan memberikan jawaban langsung, tapi akan membimbingmu berpikir.</li>
     <li><strong>Klik tombol "Cek"</strong> sebelum Submit untuk mendapatkan feedback dan memperbaiki jawabanmu.</li>
     <li><strong>Jangan terburu-buru.</strong> Pahami setiap tahap dengan baik sebelum lanjut ke tahap berikutnya.</li>

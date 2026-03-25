@@ -70,7 +70,7 @@
                 color: #1e40af;
             }
 
-            .badge-modified {
+            .badge-modify {
                 background: #f3e8ff;
                 color: #6b21a8;
             }
@@ -150,7 +150,7 @@
     </x-slot:styles>
 
     <div class="breadcrumb">
-        <a href="{{ route('admin.courses.index') }}">Kelola Kelas</a>
+        <a href="{{ route('admin.courses.index') }}">Kelola LKPD</a>
         <span>›</span>
         <a href="{{ route('admin.chapters.index', $course) }}">{{ $course->title }}</a>
         <span>›</span>
@@ -201,50 +201,14 @@
 
             <hr style="border:none; border-top:1px dashed #e4e8f1; margin:24px 0;">
 
-            <!-- Order + Level -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Urutan *</label>
-                    <input type="number" name="order" value="{{ old('order', $activity->order) }}" required
-                        min="0">
-                </div>
-
-                @if ($activity->stage == 'investigate')
-                    <div class="form-group">
-                        <label>Level *</label>
-                        <select name="level" required>
-                            <option value="atoms" {{ old('level', $activity->level) == 'atoms' ? 'selected' : '' }}>
-                                Atoms</option>
-                            <option value="blocks" {{ old('level', $activity->level) == 'blocks' ? 'selected' : '' }}>
-                                Blocks</option>
-                            <option value="relations"
-                                {{ old('level', $activity->level) == 'relations' ? 'selected' : '' }}>Relations
-                            </option>
-                            <option value="macro" {{ old('level', $activity->level) == 'macro' ? 'selected' : '' }}>
-                                Macro</option>
-                        </select>
-                    </div>
-                @elseif(in_array($activity->stage, ['modified', 'make']))
-                    <div class="form-group">
-                        <label>Level *</label>
-                        <select name="level" required>
-                            <option value="mudah" {{ old('level', $activity->level) == 'mudah' ? 'selected' : '' }}>
-                                Mudah</option>
-                            <option value="sedang" {{ old('level', $activity->level) == 'sedang' ? 'selected' : '' }}>
-                                Sedang</option>
-                            <option value="tantang"
-                                {{ old('level', $activity->level) == 'tantang' ? 'selected' : '' }}>Tantang</option>
-                        </select>
-                    </div>
-                @else
-                    <div class="form-group"></div>
-                @endif
-            </div>
+            @if(in_array($activity->stage, ['modify', 'make']))
+                <input type="hidden" name="level" value="{{ $activity->level }}">
+            @endif
 
             <hr class="section-divider">
 
             <!-- Description -->
-            @if (in_array($activity->stage, ['predict', 'modified', 'make']))
+            @if (in_array($activity->stage, ['predict', 'modify', 'make']))
                 <div class="section-label">
                     @if ($activity->stage == 'predict')
                         Deskripsi Soal
@@ -286,7 +250,7 @@
             @endif
 
             <!-- Editor Default Code -->
-            @if ($activity->stage == 'modified')
+            @if ($activity->stage == 'modify')
                 <hr class="section-divider">
                 <div class="form-group">
                     <label>Kode Default Editor</label>
@@ -296,7 +260,7 @@
             @endif
 
             <!-- Expected Output -->
-            @if (in_array($activity->stage, ['modified', 'make']))
+            @if (in_array($activity->stage, ['modify', 'make']))
                 <hr class="section-divider">
                 <div class="form-group">
                     <label>Expected Output (JSON)</label>
@@ -381,7 +345,7 @@
             }
         </style>
 
-        @if (in_array($activity->stage, ['predict', 'modified', 'make']))
+        @if (in_array($activity->stage, ['predict', 'modify', 'make']))
             <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/quill-resize-image@1.0.4/dist/quill-resize-image.min.js"></script>
             <script>

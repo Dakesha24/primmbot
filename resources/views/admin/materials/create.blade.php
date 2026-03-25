@@ -89,7 +89,7 @@
     </x-slot:styles>
 
     <div class="breadcrumb">
-        <a href="{{ route('admin.courses.index') }}">Kelola Kelas</a>
+        <a href="{{ route('admin.courses.index') }}">Kelola LKPD</a>
         <span>›</span>
         <a href="{{ route('admin.chapters.index', $course) }}">{{ $course->title }}</a>
         <span>›</span>
@@ -112,27 +112,16 @@
         <form method="POST" action="{{ route('admin.materials.store', [$course, $chapter]) }}" id="materialForm">
             @csrf
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Tipe Materi *</label>
-                    <select name="type" required>
-                        <option value="">— Pilih Tipe —</option>
-                        <option value="pendahuluan" {{ old('type') == 'pendahuluan' ? 'selected' : '' }}>Pendahuluan
-                        </option>
-                        <option value="petunjuk_belajar" {{ old('type') == 'petunjuk_belajar' ? 'selected' : '' }}>
-                            Petunjuk Belajar</option>
-                        <option value="tujuan" {{ old('type') == 'tujuan' ? 'selected' : '' }}>Tujuan Pembelajaran
-                        </option>
-                        <option value="prasyarat" {{ old('type') == 'prasyarat' ? 'selected' : '' }}>Prasyarat Tools
-                        </option>
-                        <option value="ringkasan_materi" {{ old('type') == 'ringkasan_materi' ? 'selected' : '' }}>
-                            Ringkasan Materi</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Urutan *</label>
-                    <input type="number" name="order" value="{{ old('order', 0) }}" required min="0">
-                </div>
+            <div class="form-group">
+                <label>Tipe Materi *</label>
+                <select name="type" required>
+                    <option value="">— Pilih Tipe —</option>
+                    <option value="pendahuluan" {{ old('type', request('type')) == 'pendahuluan' ? 'selected' : '' }}>Pendahuluan</option>
+                    <option value="petunjuk_belajar" {{ old('type', request('type')) == 'petunjuk_belajar' ? 'selected' : '' }}>Petunjuk Belajar</option>
+                    <option value="tujuan" {{ old('type', request('type')) == 'tujuan' ? 'selected' : '' }}>Tujuan Pembelajaran</option>
+                    <option value="prasyarat" {{ old('type', request('type')) == 'prasyarat' ? 'selected' : '' }}>Prasyarat</option>
+                    <option value="ringkasan_materi" {{ old('type', request('type')) == 'ringkasan_materi' ? 'selected' : '' }}>Ringkasan Materi</option>
+                </select>
             </div>
 
             <div class="form-group">

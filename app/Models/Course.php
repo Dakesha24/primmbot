@@ -13,7 +13,22 @@ class Course extends Model
         'title',
         'description',
         'order',
+        'kelas_id',
+        'cover_image',
     ];
+
+    public function coverImageUrl(): string
+    {
+        if ($this->cover_image) {
+            return asset('storage/' . $this->cover_image);
+        }
+        return asset('assets/images/cover-course-default.png');
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(\App\Models\Kelas::class);
+    }
 
     public function chapters()
     {
@@ -23,5 +38,10 @@ class Course extends Model
     public function activities()
     {
         return $this->hasManyThrough(\App\Models\Activity::class, \App\Models\Chapter::class);
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\CourseEnrollment::class);
     }
 }

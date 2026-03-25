@@ -40,11 +40,6 @@
                 margin-bottom: 6px;
             }
 
-            .form-card .subtitle {
-                font-size: 13px;
-                color: #94a3b8;
-                margin-bottom: 24px;
-            }
 
             .form-row {
                 display: flex;
@@ -57,36 +52,6 @@
                 margin-bottom: 0;
             }
 
-            .stage-selector {
-                display: flex;
-                gap: 8px;
-                margin-bottom: 28px;
-            }
-
-            .stage-btn {
-                padding: 8px 18px;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-                font-family: inherit;
-                cursor: pointer;
-                border: 1.5px solid #e2e8f0;
-                background: #fff;
-                color: #64748b;
-                text-decoration: none;
-                transition: all 0.15s;
-            }
-
-            .stage-btn:hover {
-                border-color: #3b5bdb;
-                color: #3b5bdb;
-            }
-
-            .stage-btn.active {
-                background: #0f1b3d;
-                color: #fff;
-                border-color: #0f1b3d;
-            }
 
             .field-hint {
                 font-size: 11px;
@@ -240,7 +205,7 @@
     </x-slot:styles>
 
     <div class="breadcrumb">
-        <a href="{{ route('admin.courses.index') }}">Kelola Kelas</a>
+        <a href="{{ route('admin.courses.index') }}">Kelola LKPD</a>
         <span>›</span>
         <a href="{{ route('admin.chapters.index', $course) }}">{{ $course->title }}</a>
         <span>›</span>
@@ -250,15 +215,7 @@
     </div>
 
     <div class="form-card">
-        <h2>Tambah Aktivitas PRIMM</h2>
-        <p class="subtitle">Pilih tahap PRIMM lalu isi form sesuai kebutuhan tahap tersebut.</p>
-
-        <div class="stage-selector">
-            @foreach (['predict', 'run', 'investigate', 'modified', 'make'] as $s)
-                <a href="{{ route('admin.activities.create', [$course, $chapter, 'stage' => $s]) }}"
-                    class="stage-btn {{ $stage == $s ? 'active' : '' }}">{{ ucfirst($s) }}</a>
-            @endforeach
-        </div>
+        <h2>Tambah Aktivitas — {{ ucfirst($stage) }}</h2>
 
         @if ($errors->any())
             <div class="form-errors">
@@ -292,42 +249,12 @@
 
             <hr class="section-divider">
 
-            <!-- Order + Level -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Urutan *</label>
-                    <input type="number" name="order" value="{{ old('order', 0) }}" required min="0">
-                </div>
-
-                @if ($stage == 'investigate')
-                    <div class="form-group">
-                        <label>Level *</label>
-                        <select name="level" required>
-                            <option value="atoms" {{ old('level') == 'atoms' ? 'selected' : '' }}>Atoms</option>
-                            <option value="blocks" {{ old('level') == 'blocks' ? 'selected' : '' }}>Blocks</option>
-                            <option value="relations" {{ old('level') == 'relations' ? 'selected' : '' }}>Relations
-                            </option>
-                            <option value="macro" {{ old('level') == 'macro' ? 'selected' : '' }}>Macro</option>
-                        </select>
-                    </div>
-                @elseif(in_array($stage, ['modified', 'make']))
-                    <div class="form-group">
-                        <label>Level *</label>
-                        <select name="level" required>
-                            <option value="mudah" {{ old('level') == 'mudah' ? 'selected' : '' }}>Mudah</option>
-                            <option value="sedang" {{ old('level') == 'sedang' ? 'selected' : '' }}>Sedang</option>
-                            <option value="tantang" {{ old('level') == 'tantang' ? 'selected' : '' }}>Tantang</option>
-                        </select>
-                    </div>
-                @else
-                    <div class="form-group"></div>
-                @endif
-            </div>
+            {{-- level di-assign otomatis oleh controller untuk semua stage --}}
 
             <hr class="section-divider">
 
             <!-- Description -->
-            @if (in_array($stage, ['predict', 'modified', 'make']))
+            @if (in_array($stage, ['predict', 'modify', 'make']))
                 <div class="section-label">
                     @if ($stage == 'predict')
                         Deskripsi Soal (cerita + tabel database)
@@ -388,7 +315,7 @@
             @endif
 
             <!-- Editor Default Code -->
-            @if ($stage == 'modified')
+            @if ($stage == 'modify')
                 <hr class="section-divider">
                 <div class="form-group">
                     <label>Kode Default Editor</label>
@@ -400,7 +327,7 @@
             @endif
 
             <!-- Expected Output -->
-            @if (in_array($stage, ['modified', 'make']))
+            @if (in_array($stage, ['modify', 'make']))
                 <hr class="section-divider">
                 <div class="form-group">
                     <label>Expected Output (JSON)</label>
@@ -420,7 +347,7 @@
     </div>
 
     <x-slot:scripts>
-        @if (in_array($stage, ['predict', 'modified', 'make']))
+        @if (in_array($stage, ['predict', 'modify', 'make']))
             <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/quill-resize-image@1.0.4/dist/quill-resize-image.min.js"></script>
             <script>

@@ -30,6 +30,12 @@ class GoogleController extends Controller
             ->first();
 
         if ($user) {
+            // Cek status aktif
+            if (!$user->is_active) {
+                return redirect()->route('login')
+                    ->with('error', 'Akun Anda telah dinonaktifkan. Hubungi administrator untuk informasi lebih lanjut.');
+            }
+
             // Update google_id jika belum ada
             if (!$user->google_id) {
                 $user->update(['google_id' => $googleUser->getId()]);

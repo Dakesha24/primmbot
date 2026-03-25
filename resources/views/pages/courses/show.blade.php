@@ -1,11 +1,37 @@
 <x-layouts.app title="{{ $course->title }} - PRIMMBOT">
 
+    @if (session('enroll_success'))
+        <style>
+            @keyframes toastIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const toast = document.createElement('div');
+                toast.id = 'enroll-toast';
+                toast.style.cssText = 'position:fixed;top:5rem;left:50%;transform:translateX(-50%);z-index:9999;background:#0f2a1a;border:1px solid rgba(74,222,128,0.35);border-radius:10px;padding:0.65rem 1rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:0.6rem;white-space:nowrap;animation:toastIn 0.3s ease;';
+                toast.innerHTML = `
+                    <svg width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2.5" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <span style="font-size:0.82rem;font-weight:600;color:#4ade80;">Berhasil mendaftar</span>
+                    <span style="font-size:0.82rem;color:#94a3b8;">—</span>
+                    <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">{{ session('enroll_success') }}</span>
+                    <button onclick="this.closest('#enroll-toast').remove()" style="background:none;border:none;color:#475569;cursor:pointer;padding:0 0 0 4px;font-size:0.9rem;line-height:1;flex-shrink:0;">✕</button>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.transition = 'opacity 0.4s';
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 400);
+                }, 5000);
+            });
+        </script>
+    @endif
+
     <div class="page-header fade-up">
         <div style="margin-bottom:0.5rem;">
             <a href="{{ route('courses.index') }}" style="color:#64748b;text-decoration:none;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;transition:color 0.2s;"
                 onmouseover="this.style.color='#cbd5e1'" onmouseout="this.style.color='#64748b'">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                Daftar Kelas
+                Daftar LKPD
             </a>
         </div>
         <h1 class="page-title">{{ $course->title }}</h1>
@@ -54,49 +80,15 @@
                     </div>
                 </div>
 
-                <button onclick="openConfirm('{{ $chapter->title }}', '{{ $entryUrl }}')"
-                    style="padding:0.45rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#cbd5e1;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;flex-shrink:0;font-family:inherit;"
+                <a href="{{ $entryUrl }}"
+                    style="padding:0.45rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#cbd5e1;font-size:0.8rem;font-weight:600;text-decoration:none;transition:all 0.2s;flex-shrink:0;white-space:nowrap;"
                     onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.25)';this.style.color='#fff'"
                     onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='#cbd5e1'">
-                    Koridor Kelas
-                </button>
+                    Koridor LKPD
+                </a>
             </div>
         @endforeach
     </div>
 
-    {{-- Modal Konfirmasi --}}
-    <div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
-        <div style="background:linear-gradient(135deg,#0f2044,#142c5c);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2rem;max-width:400px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
-            <div style="width:56px;height:56px;border-radius:50%;background:rgba(37,99,235,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;">
-                <svg width="24" height="24" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                </svg>
-            </div>
-            <h3 style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:0.4rem;">Mulai Kelas?</h3>
-            <p id="confirmText" style="font-size:0.85rem;color:#94a3b8;margin-bottom:1.5rem;line-height:1.5;"></p>
-            <div style="display:flex;gap:0.75rem;justify-content:center;">
-                <button onclick="closeConfirm()" style="padding:0.6rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'"
-                    onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
-                    Batal
-                </button>
-                <a id="confirmLink" href="#" style="padding:0.6rem 1.5rem;border-radius:10px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;box-shadow:0 4px 16px rgba(37,99,235,0.3);transition:all 0.2s;"
-                    onmouseover="this.style.transform='translateY(-1px)'"
-                    onmouseout="this.style.transform='translateY(0)'">
-                    Ya, Mulai!
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function openConfirm(title, url) {
-            document.getElementById('confirmText').textContent = 'Kamu akan memasuki koridor kelas "' + title + '". Pastikan kamu sudah siap untuk belajar.';
-            document.getElementById('confirmLink').href = url;
-            document.getElementById('confirmModal').style.display = 'flex';
-        }
-        function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; }
-        document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
-    </script>
 
 </x-layouts.app>

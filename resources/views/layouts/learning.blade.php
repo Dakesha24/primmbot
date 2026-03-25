@@ -91,22 +91,21 @@
             gap: 1rem
         }
 
-        .topbar-right a {
-            color: #64748b;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 500;
-            padding: 0.4rem 0.8rem;
+        .btn-exit-kelas {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
             border-radius: 8px;
+            border: 1px solid rgba(248,113,113,0.3);
+            background: rgba(248,113,113,0.08);
+            color: #f87171;
+            font-size: 0.8rem; font-weight: 600;
+            font-family: inherit; cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem
         }
-
-        .topbar-right a:hover {
-            color: #cbd5e1;
-            background: rgba(255, 255, 255, 0.05)
+        .btn-exit-kelas:hover {
+            background: rgba(248,113,113,0.16);
+            border-color: rgba(248,113,113,0.5);
+            color: #fca5a5;
         }
 
         .sidebar {
@@ -418,6 +417,33 @@
 <body>
     <div class="glow-orb glow-1"></div>
 
+    <!-- Modal Keluar Kelas -->
+    <div id="exitModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+        <div style="background:linear-gradient(135deg,#0f2044,#142c5c);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2rem;max-width:380px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+            <div style="width:52px;height:52px;border-radius:50%;background:rgba(248,113,113,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;">
+                <svg width="22" height="22" fill="none" stroke="#f87171" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+            </div>
+            <h3 style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Keluar dari Kelas?</h3>
+            <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1.8rem;line-height:1.6;">Progressmu sudah tersimpan. Kamu bisa melanjutkan belajar kapan saja.</p>
+            <div style="display:flex;gap:0.75rem;justify-content:center;">
+                <button onclick="closeExitModal()"
+                    style="padding:0.6rem 1.4rem;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'"
+                    onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                    Lanjut Belajar
+                </button>
+                <a href="{{ route('courses.show', $chapter->course) }}"
+                    style="padding:0.6rem 1.4rem;border-radius:10px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-size:0.85rem;font-weight:700;text-decoration:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem;"
+                    onmouseover="this.style.background='rgba(248,113,113,0.25)'"
+                    onmouseout="this.style.background='rgba(248,113,113,0.15)'">
+                    Ya, Keluar
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Bar -->
     <div class="topbar">
         <div class="topbar-left">
@@ -427,16 +453,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
-            <a href="{{ route('home') }}" class="topbar-logo">PRIMM<span>BOT</span></a>
+            <a href="{{ route('dashboard') }}" class="topbar-logo">PRIMM<span>BOT</span></a>
         </div>
         <div class="topbar-right">
-            <a href="{{ route('courses.show', $chapter->course) }}">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <button onclick="openExitModal()" class="btn-exit-kelas">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
-                Keluar Kelas
-            </a>
+                Keluar
+            </button>
         </div>
     </div>
 
@@ -470,19 +495,8 @@
                     ];
                 @endphp
                 @foreach ($chapter->lessonMaterials->whereIn('type', ['pendahuluan', 'petunjuk_belajar', 'tujuan', 'prasyarat'])->sortBy('order') as $mat)
-                    @php $matCompleted = in_array($mat->id, $completedMaterialIds ?? []); @endphp
                     <a href="{{ route('learning.material', [$chapter, $mat->type]) }}"
                         class="sidebar-item {{ request()->is('*materi/' . $mat->type) ? 'active' : '' }}">
-                        @if ($matCompleted)
-                            <span class="sidebar-check done"><svg width="10" height="10" fill="#4ade80"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg></span>
-                        @else
-                            <span class="sidebar-check pending"></span>
-                        @endif
                         {{ $matLabels[$mat->type] ?? ucfirst($mat->type) }}
                     </a>
                 @endforeach
@@ -505,16 +519,6 @@
                 @endphp
                 <a href="{{ route('learning.summary', $chapter) }}"
                     class="sidebar-item {{ request()->routeIs('learning.summary') ? 'active' : '' }}">
-                    @if ($ringkasanCompleted)
-                        <span class="sidebar-check done"><svg width="10" height="10" fill="#4ade80"
-                                viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clip-rule="evenodd" />
-                            </svg></span>
-                    @else
-                        <span class="sidebar-check pending"></span>
-                    @endif
                     Ringkasan Materi
                 </a>
             </div>
@@ -535,7 +539,7 @@
                         'predict' => 'Predict',
                         'run' => 'Run',
                         'investigate' => 'Investigate',
-                        'modified' => 'Modified',
+                        'modify' => 'Modify',
                         'make' => 'Make',
                     ];
                 @endphp
@@ -614,6 +618,16 @@
                     overlay.style.display = 'none';
                 }
             }
+        });
+
+        function openExitModal() {
+            document.getElementById('exitModal').style.display = 'flex';
+        }
+        function closeExitModal() {
+            document.getElementById('exitModal').style.display = 'none';
+        }
+        document.getElementById('exitModal').addEventListener('click', function(e) {
+            if (e.target === this) closeExitModal();
         });
 
         function toggleSection(el) {

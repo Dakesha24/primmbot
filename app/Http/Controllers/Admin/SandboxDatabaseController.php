@@ -112,4 +112,45 @@ class SandboxDatabaseController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * Returns full column schema (name, type, key) + sample rows for ERD and table preview.
+     */
+    public function schemaApi(SandboxDatabase $sandbox)
+    {
+        $tables = $sandbox->sandboxTables()->orderBy('order')->get();
+
+        $result = [];
+        foreach ($tables as $table) {
+            try {
+                $describe = DB::connection('sandbox')->select("DESCRIBE `{$table->table_name}`");
+                $columns = array_map(fn($col) => [
+                    'name' => $col->Field,
+                    'type' => $col->Type,
+                    'key'  => $col->Key,
+                ], $describe);
+
+                $rows = DB::connection('sandbox')->table($table->table_name)->limit(10)->get();
+                $rowsArray = array_map(fn($r) => (array) $r, $rows->toArray());
+
+                $result[] = [
+                    'display_name' => $table->display_name,
+                    'table_name'   => $table->table_name,
+                    'columns'      => $columns,
+                    'rows'         => $rowsArray,
+                    'total'        => DB::connection('sandbox')->table($table->table_name)->count(),
+                ];
+            } catch (\Exception $e) {
+                $result[] = [
+                    'display_name' => $table->display_name,
+                    'table_name'   => $table->table_name,
+                    'columns'      => [],
+                    'rows'         => [],
+                    'total'        => 0,
+                ];
+            }
+        }
+
+        return response()->json($result);
+    }
 }

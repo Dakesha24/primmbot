@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kelas;
 use App\Models\User;
 use App\Models\Course;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
@@ -16,9 +18,9 @@ class StudentController extends Controller
         $search = $request->query('search');
 
         $students = User::where('role', 'student')
-            ->with('profile')
+            ->with('profile.kelas.school')
             ->when($kelas, function ($q) use ($kelas) {
-                $q->whereHas('profile', fn($p) => $p->where('kelas', $kelas));
+                $q->whereHas('profile', fn($p) => $p->where('kelas_id', $kelas));
             })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($q2) use ($search) {
@@ -56,14 +58,14 @@ class StudentController extends Controller
                 : 0;
         });
 
-        $kelasList = ['XI PPLG 1', 'XI PPLG 2', 'XI PPLG 3'];
+        $kelasList = Kelas::with(['school', 'tahunAjaran'])->orderBy('school_id')->orderBy('name')->get();
 
         return view('admin.students.index', compact('students', 'kelasList', 'kelas', 'sort', 'search'));
     }
 
     public function show(User $student)
     {
-        $student->load('profile');
+        $student->load('profile.kelas.school');
 
         $courses = Course::with(['chapters.activities'])->orderBy('order')->get();
 
@@ -103,16 +105,27 @@ class StudentController extends Controller
     {
         $request->validate([
             'full_name' => 'required|string|max:255',
-            'nim' => 'nullable|string|max:50',
-            'kelas' => 'nullable|string',
-            'gender' => 'nullable|in:Laki-laki,Perempuan',
-            'tahun_ajaran' => 'nullable|string|max:20',
+            'nim'       => 'nullable|string|max:50',
+            'kelas_id'  => 'nullable|exists:kelas,id',
+            'gender'    => 'nullable|in:Laki-laki,Perempuan',
         ]);
 
-        $student->profile->update($request->only('full_name', 'nim', 'kelas', 'gender', 'tahun_ajaran'));
+        $student->profile->update($request->only('full_name', 'nim', 'kelas_id', 'gender'));
 
         return redirect()->route('admin.students.index', $request->only('kelas', 'sort', 'search'))
             ->with('success', 'Data siswa berhasil diperbarui.');
+    }
+
+    public function updatePassword(Request $request, User $student)
+    {
+        $request->validate([
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $student->update(['password' => Hash::make($request->new_password)]);
+
+        return redirect()->route('admin.students.show', $student)
+            ->with('success', 'Password siswa berhasil diubah.');
     }
 
     public function toggleActive(User $student)

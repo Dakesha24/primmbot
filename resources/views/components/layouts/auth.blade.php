@@ -100,6 +100,13 @@
             box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
         }
         .form-input::placeholder { color: #475569; }
+        .form-input:-webkit-autofill,
+        .form-input:-webkit-autofill:hover,
+        .form-input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #202a3b inset;
+            -webkit-text-fill-color: #fff;
+            caret-color: #fff;
+        }
 
         .form-error {
             color: #f87171;

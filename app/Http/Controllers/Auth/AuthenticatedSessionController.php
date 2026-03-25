@@ -22,7 +22,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        $user = Auth::user();
+        $intended = session()->pull('url.intended');
+
+        if ($user->isAdmin()) {
+            $safe = ($intended && !str_contains($intended, 'logout')) ? $intended : route('admin.dashboard');
+            return redirect($safe);
+        }
+
+        $safe = ($intended && !str_contains($intended, 'logout')) ? $intended : route('dashboard');
+        return redirect($safe);
     }
 
     public function destroy(Request $request): RedirectResponse

@@ -34,6 +34,18 @@ class User extends Authenticatable
         ];
     }
 
+    // === Role Helpers ===
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
+
     // === Relationships ===
 
     public function getNameAttribute(): string
@@ -49,6 +61,11 @@ class User extends Authenticatable
     public function submissions()
     {
         return $this->hasMany(Submission::class);
+    }
+
+    public function courseEnrollments()
+    {
+        return $this->hasMany(CourseEnrollment::class);
     }
 
     public function aiInteractionLogs()

@@ -18,6 +18,7 @@ class Activity extends Model
         'question_text',
         'code_snippet',
         'editor_default_code',
+        'reference_sql',
         'expected_output',
         'order',
     ];

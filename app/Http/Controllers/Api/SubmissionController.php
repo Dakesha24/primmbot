@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\AiInteractionLog;
 use App\Models\Submission;
+use App\Services\GroqService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class SubmissionController extends Controller
 {
+    public function __construct(private GroqService $groq) {}
     // Tombol CEK — Simpan draft + kembalikan feedback AI
     public function check(Request $request): JsonResponse
     {
@@ -43,15 +46,39 @@ class SubmissionController extends Controller
             ]
         );
 
-        // Generate feedback berdasarkan tahap
-        $feedback = $this->generateFeedback($activity, $submission);
+        // Generate feedback via Groq
+        $feedback = $this->groq->getFeedback($activity, $submission);
+
+        // Untuk tahap make: evaluasi SQL juga agar frontend tahu skor
+        $score = null;
+        $isCorrect = false;
+        if ($activity->stage === 'make') {
+            $evaluation = $this->evaluateAnswer($activity, $request->answer_text, $request->answer_code);
+            $score      = $evaluation['score'];
+            $isCorrect  = $evaluation['is_correct'];
+        }
 
         // Simpan feedback
         $submission->update(['ai_feedback' => $feedback]);
 
+        // Bangun pesan visual seperti yang ditampilkan di chat widget
+        $cekParts = ['Cek jawaban:'];
+        if (!empty($request->answer_code)) $cekParts[] = $request->answer_code;
+        if (!empty($request->answer_text)) $cekParts[] = $request->answer_text;
+        $responseDisplay = $feedback . ($score !== null ? " (Skor: {$score}/100)" : '');
+
+        AiInteractionLog::create([
+            'user_id'           => Auth::id(),
+            'activity_id'       => $activity->id,
+            'prompt_sent'       => implode("\n", $cekParts),
+            'response_received' => $responseDisplay,
+        ]);
+
         return response()->json([
-            'success' => true,
-            'feedback' => $feedback,
+            'success'    => true,
+            'feedback'   => $feedback,
+            'score'      => $score,
+            'is_correct' => $isCorrect,
             'submission_id' => $submission->id,
         ]);
     }
@@ -90,6 +117,18 @@ class SubmissionController extends Controller
         // Evaluasi jawaban
         $evaluation = $this->evaluateAnswer($activity, $request->answer_text, $request->answer_code);
 
+        $submitParts = ['Submit jawaban:'];
+        if (!empty($request->answer_code)) $submitParts[] = $request->answer_code;
+        if (!empty($request->answer_text)) $submitParts[] = $request->answer_text;
+        $icon = $evaluation['is_correct'] ? '✅ ' : '⚠️ ';
+
+        AiInteractionLog::create([
+            'user_id'           => Auth::id(),
+            'activity_id'       => $activity->id,
+            'prompt_sent'       => implode("\n", $submitParts),
+            'response_received' => $icon . $evaluation['feedback'] . " (Skor: {$evaluation['score']}/100)",
+        ]);
+
         // Simpan submission
         $submission = Submission::updateOrCreate(
             [
@@ -125,7 +164,7 @@ class SubmissionController extends Controller
         $chapter = $activity->chapter;
 
         // Definisi urutan stage
-        $stageOrder = ['predict', 'run', 'investigate', 'modified', 'make'];
+        $stageOrder = ['predict', 'run', 'investigate', 'modify', 'make'];
         $currentStageIndex = array_search($activity->stage, $stageOrder);
 
         // Cek apakah semua stage sebelumnya sudah selesai
@@ -188,189 +227,80 @@ class SubmissionController extends Controller
         ]);
     }
 
-    // ==========================================
-    // FEEDBACK & EVALUATION (Sementara tanpa AI)
-    // Nanti diganti integrasi Gemini API
-    // ==========================================
-
-    private function generateFeedback(Activity $activity, Submission $submission): string
+    // Virtual Assistant Chat
+    public function chat(Request $request): JsonResponse
     {
-        $stage = $activity->stage;
+        $request->validate([
+            'activity_id' => ['required', 'exists:activities,id'],
+            'message'     => ['required', 'string', 'max:1000'],
+            'history'     => ['nullable', 'array'],
+        ]);
 
-        // Feedback sementara berdasarkan tahap (nanti diganti AI)
-        switch ($stage) {
-            case 'predict':
-                return $this->feedbackPredict($activity, $submission);
-            case 'run':
-                return $this->feedbackRun($activity, $submission);
-            case 'investigate':
-                return $this->feedbackInvestigate($activity, $submission);
-            case 'modified':
-                return $this->feedbackModified($activity, $submission);
-            case 'make':
-                return $this->feedbackMake($activity, $submission);
-            default:
-                return 'Feedback tidak tersedia.';
-        }
-    }
+        $activity = Activity::findOrFail($request->activity_id);
+        $history  = $request->input('history', []);
 
-    private function feedbackPredict(Activity $activity, Submission $submission): string
-    {
-        $answer = strtolower($submission->answer_text ?? '');
-        if (strlen($answer) < 20) {
-            return 'Coba jelaskan lebih detail prediksimu. Apa yang akan ditampilkan oleh query tersebut? Kolom apa saja yang muncul? Data dari tabel mana?';
-        }
-        if (str_contains($answer, 'join') || str_contains($answer, 'gabung') || str_contains($answer, 'tabel')) {
-            return 'Bagus! Kamu sudah menyebutkan konsep penggabungan tabel. Coba perinci lagi: kolom apa saja yang akan muncul di hasil output?';
-        }
-        return 'Coba perhatikan lagi query-nya. Kata kunci SELECT menentukan kolom apa yang ditampilkan, dan JOIN menggabungkan data dari dua tabel. Apa yang bisa kamu simpulkan?';
-    }
+        $response = $this->groq->chat($activity, $request->message, $history);
 
-    private function feedbackRun(Activity $activity, Submission $submission): string
-    {
-        $answer = strtolower($submission->answer_text ?? '');
-        if (strlen($answer) < 20) {
-            return 'Jelaskan lebih detail perbandinganmu. Apakah hasil output sama dengan prediksimu? Bagian mana yang berbeda?';
-        }
-        return 'Refleksi yang baik! Dengan membandingkan prediksi dan hasil aktual, kamu bisa memahami bagaimana SQL memproses perintah JOIN.';
-    }
+        AiInteractionLog::create([
+            'user_id'           => Auth::id(),
+            'activity_id'       => $activity->id,
+            'prompt_sent'       => $request->message,
+            'response_received' => $response,
+        ]);
 
-    private function feedbackInvestigate(Activity $activity, Submission $submission): string
-    {
-        $answer = strtolower($submission->answer_text ?? '');
-        $level = $activity->level;
-
-        if (strlen($answer) < 15) {
-            return 'Jawabanmu masih terlalu singkat. Coba jelaskan dengan lebih detail menggunakan bahasamu sendiri.';
-        }
-
-        $hints = [
-            'atoms' => 'Perhatikan setiap elemen kecil dalam query. Tanda titik (.) berfungsi untuk menunjukkan kolom milik tabel tertentu. Apakah jawabanmu sudah mencakup hal ini?',
-            'blocks' => 'Coba pikirkan fungsi dari setiap blok/baris dalam query. Baris ON menentukan kondisi pencocokan antar tabel.',
-            'relations' => 'Pikirkan hubungan antar tabel. Primary Key adalah identitas unik, sedangkan Foreign Key menghubungkan ke tabel lain.',
-            'macro' => 'Bagus! Coba pikirkan dalam konteks yang lebih luas: di situasi nyata apa saja query seperti ini dibutuhkan?',
-        ];
-
-        return $hints[$level] ?? 'Coba analisis lebih dalam lagi.';
-    }
-
-    private function feedbackModified(Activity $activity, Submission $submission): string
-    {
-        $code = strtolower($submission->answer_code ?? '');
-
-        if (empty($code)) {
-            return 'Kamu belum menulis kode SQL. Coba modifikasi kode yang ada di editor sesuai instruksi.';
-        }
-
-        if (!str_contains($code, 'select')) {
-            return 'Pastikan query-mu dimulai dengan SELECT. Coba periksa kembali sintaks SQL-mu.';
-        }
-
-        // Cek apakah output sesuai expected
-        if ($activity->expected_output) {
-            return 'Coba jalankan query-mu dengan tombol Run, lalu bandingkan hasilnya dengan yang diminta di soal. Apakah sudah sesuai?';
-        }
-
-        return 'Kode SQL-mu sudah memiliki struktur yang baik. Pastikan hasilnya sesuai dengan yang diminta di soal.';
-    }
-
-    private function feedbackMake(Activity $activity, Submission $submission): string
-    {
-        $code = strtolower($submission->answer_code ?? '');
-
-        if (empty($code)) {
-            return 'Kamu belum menulis kode SQL. Baca kembali soalnya, identifikasi tabel dan kolom yang diperlukan, lalu tulis query dari nol.';
-        }
-
-        if (!str_contains($code, 'join')) {
-            return 'Soal ini membutuhkan penggabungan dua tabel. Coba gunakan perintah JOIN untuk menghubungkan kedua tabel tersebut.';
-        }
-
-        if (!str_contains($code, 'on')) {
-            return 'Query JOIN membutuhkan kondisi ON untuk mencocokkan kolom antar tabel. Kolom apa yang menghubungkan kedua tabel tersebut?';
-        }
-
-        return 'Query-mu sudah menggunakan JOIN. Coba jalankan dan bandingkan hasilnya dengan yang diminta di soal.';
+        return response()->json([
+            'success'  => true,
+            'response' => $response,
+        ]);
     }
 
     private function evaluateAnswer(Activity $activity, ?string $answerText, ?string $answerCode): array
     {
-        // Evaluasi sementara (nanti diganti AI scoring)
         $stage = $activity->stage;
-        $score = 0;
-        $isCorrect = false;
-        $feedback = '';
 
-        switch ($stage) {
-            case 'predict':
-            case 'run':
-                // Evaluasi narasi: minimal panjang dan relevansi kata kunci
-                $answer = strtolower($answerText ?? '');
-                $keywords = ['join', 'tabel', 'kolom', 'data', 'select', 'output', 'hasil'];
-                $matchedKeywords = 0;
-                foreach ($keywords as $keyword) {
-                    if (str_contains($answer, $keyword)) {
-                        $matchedKeywords++;
-                    }
-                }
-
-                if (strlen($answer) < 20) {
-                    $score = 20;
-                    $feedback = 'Jawabanmu masih terlalu singkat. Coba klik "Cek" terlebih dahulu untuk mendapat petunjuk, lalu perbaiki jawabanmu.';
-                } elseif ($matchedKeywords < 2) {
-                    $score = 40;
-                    $feedback = 'Jawabanmu belum cukup relevan. Coba gunakan tombol "Cek" untuk mendapat petunjuk.';
-                } else {
-                    $score = 70 + ($matchedKeywords * 5);
-                    $score = min($score, 100);
-                    $isCorrect = true;
-                    $feedback = 'Jawaban diterima! Kamu sudah menunjukkan pemahaman yang baik.';
-                }
-                break;
-
-            case 'investigate':
-                $answer = strtolower($answerText ?? '');
-                if (strlen($answer) < 15) {
-                    $score = 20;
-                    $feedback = 'Jawabanmu terlalu singkat untuk di-submit. Gunakan tombol "Cek" untuk mendapat petunjuk.';
-                } elseif (strlen($answer) < 40) {
-                    $score = 50;
-                    $feedback = 'Jawabanmu masih kurang mendalam. Coba elaborasi lebih lanjut.';
-                } else {
-                    $score = 75;
-                    $isCorrect = true;
-                    $feedback = 'Jawaban diterima! Analisismu sudah cukup baik.';
-                }
-                break;
-
-            case 'modified':
-            case 'make':
-                $code = strtolower($answerCode ?? '');
-
-                if (empty($code)) {
-                    $score = 0;
-                    $feedback = 'Kamu belum menulis kode SQL.';
-                } elseif (!str_contains($code, 'select')) {
-                    $score = 20;
-                    $feedback = 'Query harus dimulai dengan SELECT.';
-                } elseif ($activity->expected_output) {
-                    // Bandingkan output dengan expected
-                    $comparison = $this->compareOutput($code, $activity->expected_output);
-                    $score = $comparison['score'];
-                    $isCorrect = $comparison['is_correct'];
-                    $feedback = $comparison['feedback'];
-                } else {
-                    $score = 60;
-                    $feedback = 'Query sudah memiliki struktur yang valid.';
-                }
-                break;
+        // Tahap berbasis narasi: scoring via Groq
+        if (in_array($stage, ['predict', 'run', 'investigate'])) {
+            return $this->groq->evaluateSubmission($activity, $answerText, $answerCode);
         }
 
-        return [
-            'is_correct' => $isCorrect,
-            'score' => $score,
-            'feedback' => $feedback,
-        ];
+        // Modify / Make: jalankan query siswa → bandingkan output aktual vs expected via AI
+        if ($stage === 'modify' || $stage === 'make') {
+            if (empty(trim($answerCode ?? ''))) {
+                return ['is_correct' => false, 'score' => 0, 'feedback' => 'Kamu belum menulis kode SQL.'];
+            }
+            try {
+                $results = \Illuminate\Support\Facades\DB::connection('sandbox')->select($answerCode);
+                $actualOutput = array_map(fn($row) => (array) $row, $results);
+            } catch (\Exception $e) {
+                return ['is_correct' => false, 'score' => 20, 'feedback' => 'Query menghasilkan error: ' . $e->getMessage()];
+            }
+            $expectedOutput = $activity->expected_output;
+            if (is_string($expectedOutput)) {
+                $expectedOutput = json_decode($expectedOutput, true) ?? [];
+            }
+            return $this->groq->evaluateModify($activity, $answerCode, $actualOutput, $expectedOutput ?? []);
+        }
+
+        // Tahap berbasis kode SQL: jalankan query dan bandingkan output
+        $code = strtolower($answerCode ?? '');
+
+        if (empty($code)) {
+            return ['is_correct' => false, 'score' => 0, 'feedback' => 'Kamu belum menulis kode SQL.'];
+        }
+
+        if (!str_contains($code, 'select')) {
+            return ['is_correct' => false, 'score' => 20, 'feedback' => 'Query harus dimulai dengan SELECT.'];
+        }
+
+        $expectedOutput = $activity->expected_output;
+        if (is_string($expectedOutput)) {
+            $expectedOutput = json_decode($expectedOutput, true);
+        }
+        if (!empty($expectedOutput)) {
+            return $this->compareOutput($answerCode, $expectedOutput);
+        }
+
+        return ['is_correct' => false, 'score' => 60, 'feedback' => 'Query sudah memiliki struktur yang valid. Pastikan hasilnya sesuai dengan yang diminta di soal.'];
     }
 
     private function compareOutput(string $query, array $expectedOutput): array

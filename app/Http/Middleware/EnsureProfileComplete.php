@@ -14,16 +14,13 @@ class EnsureProfileComplete
         if (Auth::check()) {
             $user = Auth::user();
 
-            // Admin tidak perlu cek profil
             if ($user->role === 'admin') {
                 return $next($request);
             }
 
-            // Cek apakah profil sudah lengkap
             $profile = $user->profile;
 
             if (!$profile || !$profile->isComplete()) {
-                // Izinkan akses ke halaman profil dan logout
                 if ($request->routeIs('profile.*') || $request->routeIs('logout')) {
                     return $next($request);
                 }

@@ -19,14 +19,28 @@ class SqlRunnerController extends Controller
         ]);
 
         $query = trim($request->input('query'));
+
+        // --- QUERY REWRITING: ganti nama pendek → nama penuh ---
+        $sandboxTables = SandboxTable::where('sandbox_database_id', $request->database_id)->get();
+        $tableMap = [];
+        foreach ($sandboxTables as $t) {
+            // display_name (misal: "products") → table_name (misal: "toko_ayam__products")
+            $tableMap[strtolower($t->display_name)] = $t->table_name;
+            // juga map dari bagian setelah __ sebagai fallback
+            $parts = explode('__', $t->table_name, 2);
+            if (isset($parts[1])) {
+                $tableMap[strtolower($parts[1])] = $t->table_name;
+            }
+        }
+        $query = $this->rewriteQuery($query, $tableMap);
+
         $queryType = $this->getQueryType($query);
 
         // --- VALIDASI KEAMANAN: Cek Hak Akses Semua Tabel ---
         $tableNames = $this->extractTableNames($query);
         $tableName = $tableNames[0] ?? null; // untuk keperluan SELECT * setelah DML
         if (!empty($tableNames)) {
-            $allowedTables = SandboxTable::where('sandbox_database_id', $request->database_id)
-                ->pluck('table_name')
+            $allowedTables = $sandboxTables->pluck('table_name')
                 ->map(fn($t) => strtolower($t))
                 ->toArray();
 
@@ -126,6 +140,23 @@ class SqlRunnerController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Gagal mengambil struktur tabel.'], 500);
         }
+    }
+
+    private function rewriteQuery(string $query, array $tableMap): string
+    {
+        // Ganti nama pendek dengan nama lengkap, sorted by length desc
+        // agar nama lebih panjang tidak ter-replace sebagian
+        uksort($tableMap, fn($a, $b) => strlen($b) - strlen($a));
+
+        foreach ($tableMap as $shortName => $fullName) {
+            if (strtolower($shortName) === strtolower($fullName)) continue;
+            // Ganti `shortName` (dengan backtick)
+            $query = preg_replace('/`' . preg_quote($shortName, '/') . '`/i', "`{$fullName}`", $query);
+            // Ganti shortName tanpa backtick (word boundary)
+            $query = preg_replace('/\b' . preg_quote($shortName, '/') . '\b/i', $fullName, $query);
+        }
+
+        return $query;
     }
 
     private function getQueryType(string $query): string

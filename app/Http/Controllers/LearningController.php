@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\AiInteractionLog;
 use App\Models\Chapter;
 use App\Models\MaterialCompletion;
 use App\Models\Submission;
@@ -64,7 +65,7 @@ class LearningController extends Controller
         }
 
         // Investigate: navigasi lintas semua level. Lainnya: dalam level yang sama.
-        if (in_array($activity->stage, ['investigate', 'modified', 'make'])) {
+        if (in_array($activity->stage, ['investigate', 'modify', 'make'])) {
             $siblings = $chapter->activities()
                 ->where('stage', $activity->stage)
                 ->orderBy('order')
@@ -82,6 +83,23 @@ class LearningController extends Controller
         $nextActivity = $currentIndex < $siblings->count() - 1 ? $siblings[$currentIndex + 1] : null;
         $currentNumber = $currentIndex + 1;
         $totalSiblings = $siblings->count();
+
+        // Load riwayat chat dari database untuk restore saat halaman dimuat
+        $chatLogs = AiInteractionLog::where('user_id', Auth::id())
+            ->where('activity_id', $activity->id)
+            ->orderBy('created_at')
+            ->get(['prompt_sent', 'response_received']);
+
+        // Hanya pesan chat (bukan Cek/Submit) untuk konteks API history
+        $chatHistory = $chatLogs->filter(fn($l) =>
+            !str_starts_with($l->prompt_sent, 'Cek jawaban') &&
+            !str_starts_with($l->prompt_sent, 'Submit jawaban') &&
+            !str_starts_with($l->prompt_sent, 'check:') &&
+            !str_starts_with($l->prompt_sent, 'submit:')
+        )->flatMap(fn($l) => [
+            ['role' => 'user', 'message' => $l->prompt_sent],
+            ['role' => 'assistant', 'message' => $l->response_received],
+        ])->values()->toArray();
 
         $sandboxTables = [];
         if ($activity->sandbox_database_id) {
@@ -111,7 +129,7 @@ class LearningController extends Controller
             'predict' => 'learning.stages.predict',
             'run' => 'learning.stages.run',
             'investigate' => 'learning.stages.investigate',
-            'modified' => 'learning.stages.modified',
+            'modify' => 'learning.stages.modify',
             'make' => 'learning.stages.make',
         ];
 
@@ -129,6 +147,8 @@ class LearningController extends Controller
             'currentNumber',
             'totalSiblings',
             'sandboxTables',
+            'chatLogs',
+            'chatHistory',
         ));
     }
 

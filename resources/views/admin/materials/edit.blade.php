@@ -89,7 +89,7 @@
     </x-slot:styles>
 
     <div class="breadcrumb">
-        <a href="{{ route('admin.courses.index') }}">Kelola Kelas</a>
+        <a href="{{ route('admin.courses.index') }}">Kelola LKPD</a>
         <span>›</span>
         <a href="{{ route('admin.chapters.index', $course) }}">{{ $course->title }}</a>
         <span>›</span>
@@ -131,11 +131,6 @@
                             {{ old('type', $material->type) == 'ringkasan_materi' ? 'selected' : '' }}>Ringkasan Materi
                         </option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label>Urutan *</label>
-                    <input type="number" name="order" value="{{ old('order', $material->order) }}" required
-                        min="0">
                 </div>
             </div>
 

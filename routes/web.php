@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\ActivityController as AdminActivityController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\SandboxDatabaseController as AdminSandboxController;
 use App\Http\Controllers\Admin\SandboxTableController as AdminSandboxTableController;
+use App\Http\Controllers\Admin\SchoolController as AdminSchoolController;
+use App\Http\Controllers\Admin\TahunAjaranController as AdminTahunAjaranController;
+use App\Http\Controllers\Admin\KelasController as AdminKelasController;
 
 // Public
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -31,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::middleware(['profile.complete'])->group(function () {
@@ -41,6 +45,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Kelas (Courses)
         Route::get('/kelas', [\App\Http\Controllers\CourseController::class, 'index'])->name('courses.index');
         Route::get('/kelas/{course}', [\App\Http\Controllers\CourseController::class, 'show'])->name('courses.show');
+        Route::post('/kelas/{course}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
+
+        // Hasil Belajar
+        Route::get('/hasil-belajar', [\App\Http\Controllers\HasilBelajarController::class, 'index'])->name('hasil-belajar.index');
+        Route::get('/hasil-belajar/{course}', [\App\Http\Controllers\HasilBelajarController::class, 'show'])->name('hasil-belajar.show');
+        Route::get('/hasil-belajar/{course}/pdf', [\App\Http\Controllers\HasilBelajarController::class, 'downloadPdf'])->name('hasil-belajar.pdf');
+        Route::get('/hasil-belajar/{course}/excel', [\App\Http\Controllers\HasilBelajarController::class, 'downloadExcel'])->name('hasil-belajar.excel');
 
         // Learning (langsung masuk LKPD)
         Route::prefix('/belajar/{chapter}')->name('learning.')->group(function () {
@@ -56,6 +67,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/api/submission/check', [\App\Http\Controllers\Api\SubmissionController::class, 'check'])->name('api.submission.check');
         Route::post('/api/submission/submit', [\App\Http\Controllers\Api\SubmissionController::class, 'submit'])->name('api.submission.submit');
         Route::post('/api/submission/progress', [\App\Http\Controllers\Api\SubmissionController::class, 'checkProgress'])->name('api.submission.progress');
+        Route::post('/api/chat', [\App\Http\Controllers\Api\SubmissionController::class, 'chat'])->name('api.chat');
     });
 });
 
@@ -99,11 +111,36 @@ Route::prefix('admin')
 
 
 
+        // Hasil Kelas
+        Route::get('/hasil-kelas', [\App\Http\Controllers\Admin\HasilKelasController::class, 'index'])->name('hasil-kelas.index');
+        Route::get('/hasil-kelas/{course}', [\App\Http\Controllers\Admin\HasilKelasController::class, 'show'])->name('hasil-kelas.show');
+        Route::get('/hasil-kelas/{course}/siswa/{student}', [\App\Http\Controllers\Admin\HasilKelasController::class, 'student'])->name('hasil-kelas.student');
+
+        // Sekolah
+        Route::get('/schools', [AdminSchoolController::class, 'index'])->name('schools.index');
+        Route::post('/schools', [AdminSchoolController::class, 'store'])->name('schools.store');
+        Route::put('/schools/{school}', [AdminSchoolController::class, 'update'])->name('schools.update');
+        Route::delete('/schools/{school}', [AdminSchoolController::class, 'destroy'])->name('schools.destroy');
+
+        // Tahun Ajaran
+        Route::get('/tahun-ajaran', [AdminTahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
+        Route::post('/tahun-ajaran', [AdminTahunAjaranController::class, 'store'])->name('tahun-ajaran.store');
+        Route::put('/tahun-ajaran/{tahunAjaran}', [AdminTahunAjaranController::class, 'update'])->name('tahun-ajaran.update');
+        Route::delete('/tahun-ajaran/{tahunAjaran}', [AdminTahunAjaranController::class, 'destroy'])->name('tahun-ajaran.destroy');
+        Route::patch('/tahun-ajaran/{tahunAjaran}/activate', [AdminTahunAjaranController::class, 'toggleActive'])->name('tahun-ajaran.activate');
+
+        // Kelas
+        Route::get('/kelas', [AdminKelasController::class, 'index'])->name('kelas.index');
+        Route::post('/kelas', [AdminKelasController::class, 'store'])->name('kelas.store');
+        Route::put('/kelas/{kela}', [AdminKelasController::class, 'update'])->name('kelas.update');
+        Route::delete('/kelas/{kela}', [AdminKelasController::class, 'destroy'])->name('kelas.destroy');
+
         // Students
         Route::get('/students', [AdminStudentController::class, 'index'])->name('students.index');
         Route::get('/students/{student}', [AdminStudentController::class, 'show'])->name('students.show');
         Route::put('/students/{student}', [AdminStudentController::class, 'update'])->name('students.update');
         Route::patch('/students/{student}/toggle-active', [AdminStudentController::class, 'toggleActive'])->name('students.toggleActive');
+        Route::patch('/students/{student}/password', [AdminStudentController::class, 'updatePassword'])->name('students.updatePassword');
 
         // Sandbox Databases
         Route::get('/sandbox', [AdminSandboxController::class, 'index'])->name('sandbox.index');
@@ -128,6 +165,7 @@ Route::prefix('admin')
         Route::put('/sandbox/{sandbox}/tables/{table}/modify-column', [AdminSandboxTableController::class, 'modifyColumn'])->name('sandbox.table.modifyColumn');
 
         Route::get('/sandbox/{sandbox}/preview', [AdminSandboxController::class, 'previewApi'])->name('sandbox.preview');
+        Route::get('/sandbox/{sandbox}/schema', [AdminSandboxController::class, 'schemaApi'])->name('sandbox.schema');
     });
 
 require __DIR__ . '/auth.php';

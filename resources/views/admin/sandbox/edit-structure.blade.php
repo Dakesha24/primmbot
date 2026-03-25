@@ -1,236 +1,92 @@
 <x-layouts.admin title="Struktur — {{ $table->display_name }}">
     <x-slot:styles>
         <style>
-            .breadcrumb {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-bottom: 24px;
-                font-size: 13px;
-                flex-wrap: wrap;
-            }
+            .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 13px; flex-wrap: wrap; }
+            .breadcrumb a { color: #3b5bdb; text-decoration: none; font-weight: 600; }
+            .breadcrumb a:hover { text-decoration: underline; }
+            .breadcrumb span { color: #94a3b8; }
 
-            .breadcrumb a {
-                color: #3b5bdb;
-                text-decoration: none;
-                font-weight: 600;
+            .tbl-header-bar {
+                background: #fff; border: 1px solid #e4e8f1; border-radius: 6px;
+                box-shadow: 3px 3px 0 #c8cfdc; padding: 16px 22px;
+                margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
             }
-
-            .breadcrumb a:hover {
-                text-decoration: underline;
+            .tbl-header-icon {
+                width: 36px; height: 36px; border-radius: 6px; background: #f0f2f7;
+                display: flex; align-items: center; justify-content: center; color: #6b7a99; flex-shrink: 0;
             }
+            .tbl-header-title { font-size: 15px; font-weight: 700; color: #0f1b3d; margin-bottom: 2px; }
+            .tbl-header-meta { font-size: 11.5px; color: #94a3b8; }
+            .tbl-header-meta code { background: #eef2ff; color: #3b5bdb; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-family: 'Courier New', monospace; }
 
-            .breadcrumb span {
-                color: #94a3b8;
+            .section-title { font-size: 13px; font-weight: 700; color: #0f1b3d; margin-bottom: 12px; }
+            .section-divider { border: none; border-top: 1px dashed #e4e8f1; margin: 28px 0; }
+
+            .struct-wrap {
+                background: #fff; border: 1px solid #e4e8f1; border-radius: 6px;
+                box-shadow: 3px 3px 0 #c8cfdc; overflow: hidden; margin-bottom: 4px;
             }
-
-            .table-banner {
-                background: #fff;
-                border: 1px solid #e4e8f1;
-                border-radius: 14px;
-                padding: 18px 24px;
-                margin-bottom: 28px;
+            .struct-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+            .struct-table thead tr { background: #f8f9fc; border-bottom: 2px solid #e4e8f1; }
+            .struct-table th {
+                padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700;
+                color: #6b7a99; text-transform: uppercase; letter-spacing: 0.05em;
             }
+            .struct-table td { padding: 11px 16px; color: #1e293b; }
+            .struct-table tbody tr { border-bottom: 1px solid #f0f2f7; }
+            .struct-table tbody tr:last-child { border-bottom: none; }
+            .struct-table tbody tr:hover td { background: #fafbfd; }
+            .struct-table .edit-row td { background: #f8f9fc !important; }
 
-            .table-banner h2 {
-                font-size: 16px;
-                font-weight: 700;
-                color: #0f1b3d;
-                margin-bottom: 3px;
-            }
+            .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+            .badge-pk { color: #fff; background: #0f1b3d; }
+            .badge-fk { color: #3b5bdb; background: #eef2ff; }
+            .badge-null { color: #6b7a99; background: #f0f2f7; }
 
-            .table-banner .meta {
-                font-size: 12px;
-                color: #94a3b8;
-            }
-
-            .table-banner code {
-                background: #eef2ff;
-                color: #3b5bdb;
-                padding: 2px 8px;
-                border-radius: 4px;
-                font-size: 11px;
-            }
-
-            .section-label {
-                font-size: 14px;
-                font-weight: 700;
-                color: #0f1b3d;
-                margin-bottom: 14px;
-            }
-
-            /* Column list */
-            .col-list {
-                background: #fff;
-                border: 1px solid #e4e8f1;
-                border-radius: 14px;
-                overflow: hidden;
-                margin-bottom: 28px;
-            }
-
-            .col-list table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 13px;
-            }
-
-            .col-list thead tr {
-                background: #f8f9fc;
-                border-bottom: 1px solid #e4e8f1;
-            }
-
-            .col-list th {
-                padding: 11px 16px;
-                text-align: left;
-                font-size: 11px;
-                font-weight: 700;
-                color: #94a3b8;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-            }
-
-            .col-list td {
-                padding: 12px 16px;
-                color: #1e293b;
-            }
-
-            .col-list tbody tr {
-                border-bottom: 1px solid #f0f2f7;
-            }
-
-            .col-list tbody tr:last-child {
-                border-bottom: none;
-            }
-
-            .col-list tbody tr:hover {
-                background: #fafbfd;
-            }
-
-            .badge-pk {
-                font-size: 10px;
-                font-weight: 700;
-                color: #fff;
-                background: #0f1b3d;
-                padding: 2px 8px;
-                border-radius: 4px;
-            }
-
-            .badge-fk {
-                font-size: 10px;
-                font-weight: 700;
-                color: #3b5bdb;
-                background: #eef2ff;
-                padding: 2px 8px;
-                border-radius: 4px;
-            }
-
-            .badge-null {
-                font-size: 10px;
-                font-weight: 700;
-                color: #94a3b8;
-                background: #f0f2f7;
-                padding: 2px 8px;
-                border-radius: 4px;
-            }
-
-            .col-actions {
-                display: flex;
-                gap: 4px;
-            }
-
+            .col-actions { display: flex; gap: 4px; }
             .btn-xs {
-                padding: 5px 11px;
-                border-radius: 6px;
-                font-size: 11.5px;
-                font-weight: 600;
-                font-family: inherit;
-                cursor: pointer;
-                border: none;
-                text-decoration: none;
-                transition: all 0.15s;
+                padding: 5px 11px; border-radius: 5px; font-size: 11.5px; font-weight: 600;
+                font-family: inherit; cursor: pointer; border: none; text-decoration: none; transition: all 0.12s;
             }
+            .btn-xs-edit { color: #475569; background: #f1f5f9; }
+            .btn-xs-edit:hover { background: #e2e8f0; }
+            .btn-xs-del { color: #ef4444; background: #fff; border: 1px solid #f0f2f7; }
+            .btn-xs-del:hover { background: #fef2f2; border-color: #fecaca; }
+            .btn-xs-save { color: #16a34a; background: #f0fdf4; }
+            .btn-xs-save:hover { background: #dcfce7; }
+            .btn-xs-cancel { color: #64748b; background: #f1f5f9; }
+            .btn-xs-cancel:hover { background: #e2e8f0; }
 
-            .btn-xs-edit {
-                color: #475569;
-                background: #f1f5f9;
+            /* Inline edit form inside table row */
+            .inline-edit-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 2px 0; }
+            .inline-field { display: flex; flex-direction: column; gap: 3px; }
+            .inline-field label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+            .inline-field input, .inline-field select {
+                padding: 6px 9px; border: 1.5px solid #dde1ea; border-radius: 5px;
+                font-size: 12.5px; font-family: inherit; color: #1e293b; background: #fff;
             }
+            .inline-field input:focus, .inline-field select:focus { outline: none; border-color: #0f1b3d; }
+            .inline-field input[type="number"] { width: 76px; }
+            .inline-field .null-check { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #64748b; cursor: pointer; padding-top: 14px; }
 
-            .btn-xs-edit:hover {
-                background: #e2e8f0;
-            }
-
-            .btn-xs-del {
-                color: #ef4444;
-                background: #fff;
-            }
-
-            .btn-xs-del:hover {
-                background: #fef2f2;
-            }
-
-            /* Add column form */
+            /* Add column card */
             .add-col-card {
-                background: #fff;
-                border: 1px solid #e4e8f1;
-                border-radius: 14px;
-                padding: 24px;
-                margin-bottom: 28px;
+                background: #fff; border: 1px solid #e4e8f1; border-radius: 6px;
+                box-shadow: 3px 3px 0 #c8cfdc; padding: 22px 24px;
             }
+            .add-col-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+            .add-col-field { display: flex; flex-direction: column; gap: 4px; }
+            .add-col-field label { font-size: 10.5px; font-weight: 700; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; }
+            .add-col-field input, .add-col-field select {
+                padding: 7px 10px; border: 1.5px solid #dde1ea; border-radius: 5px;
+                font-size: 12.5px; font-family: inherit; color: #1e293b; background: #fff;
+            }
+            .add-col-field input:focus, .add-col-field select:focus { outline: none; border-color: #0f1b3d; }
+            .add-col-field .null-check { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #64748b; cursor: pointer; padding-top: 16px; }
 
-            .add-col-row {
-                display: flex;
-                gap: 10px;
-                align-items: flex-end;
-                flex-wrap: wrap;
-                margin-bottom: 12px;
-            }
-
-            .add-col-row .field {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .add-col-row .field label {
-                font-size: 11px;
-                font-weight: 700;
-                color: #94a3b8;
-                text-transform: uppercase;
-            }
-
-            .add-col-row .field input,
-            .add-col-row .field select {
-                padding: 8px 10px;
-                border: 1.5px solid #e2e8f0;
-                border-radius: 8px;
-                font-size: 13px;
-                font-family: inherit;
-                color: #1e293b;
-                background: #fff;
-            }
-
-            .add-col-row .field input:focus,
-            .add-col-row .field select:focus {
-                outline: none;
-                border-color: #0f1b3d;
-            }
-
-            .fk-row {
-                display: flex;
-                gap: 10px;
-                align-items: flex-end;
-                flex-wrap: wrap;
-                padding-top: 12px;
-                border-top: 1px dashed #e4e8f1;
-                margin-bottom: 16px;
-            }
-
-            .fk-row .fk-label {
-                font-size: 12px;
-                font-weight: 700;
-                color: #3b5bdb;
-                padding-bottom: 8px;
-            }
+            .fk-section { padding-top: 14px; border-top: 1px dashed #e4e8f1; margin-bottom: 16px; }
+            .fk-section-label { font-size: 11px; font-weight: 700; color: #3b5bdb; margin-bottom: 10px; }
+            .fk-row { display: flex; gap: 10px; flex-wrap: wrap; }
         </style>
     </x-slot:styles>
 
@@ -244,18 +100,23 @@
         <span>Edit Struktur</span>
     </div>
 
-    <div class="table-banner">
-        <h2>Struktur Tabel: {{ $table->display_name }}</h2>
-        <div class="meta"><code>{{ $table->table_name }}</code></div>
+    <div class="tbl-header-bar">
+        <div class="tbl-header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <div>
+            <div class="tbl-header-title">Struktur: {{ $table->display_name }}</div>
+            <div class="tbl-header-meta"><code>{{ $table->table_name }}</code></div>
+        </div>
     </div>
 
-    <!-- Current Columns -->
-    <div class="section-label">Kolom Saat Ini</div>
-    <div class="col-list">
-        <table>
+    {{-- Current Columns --}}
+    <div class="section-title">Kolom Saat Ini</div>
+    <div class="struct-wrap">
+        <table class="struct-table">
             <thead>
                 <tr>
-                    <th>Nama</th>
+                    <th>Nama Kolom</th>
                     <th>Tipe</th>
                     <th>Atribut</th>
                     <th>Relasi FK</th>
@@ -266,91 +127,67 @@
                 @foreach ($columns as $col)
                     {{-- View row --}}
                     <tr id="viewRow-{{ $col->Field }}">
-                        <td style="font-weight:600;">{{ $col->Field }}</td>
-                        <td><code
-                                style="background:#f0f2f7; padding:2px 8px; border-radius:4px; font-size:12px;">{{ $col->Type }}</code>
-                        </td>
+                        <td style="font-weight:600; font-family:'Courier New',monospace; font-size:12px;">{{ $col->Field }}</td>
                         <td>
-                            @if ($col->Key === 'PRI')
-                                <span class="badge-pk">PRIMARY KEY</span>
-                            @endif
-                            @if ($col->Null === 'YES')
-                                <span class="badge-null">NULLABLE</span>
-                            @endif
-                            @if (str_contains($col->Extra, 'auto_increment'))
-                                <span class="badge-null">AUTO_INCREMENT</span>
-                            @endif
+                            <code style="background:#f0f2f7; color:#1e293b; padding:2px 7px; border-radius:4px; font-size:11.5px; font-family:'Courier New',monospace;">{{ $col->Type }}</code>
+                        </td>
+                        <td style="display:flex; gap:4px; flex-wrap:wrap; align-items:center; min-height:38px;">
+                            @if ($col->Key === 'PRI')<span class="badge badge-pk">PK</span>@endif
+                            @if ($col->Null === 'YES')<span class="badge badge-null">NULL</span>@endif
+                            @if (str_contains($col->Extra, 'auto_increment'))<span class="badge badge-null">AI</span>@endif
                         </td>
                         <td>
                             @if (isset($fkMap[$col->Field]))
-                                <span class="badge-fk">→ {{ $fkMap[$col->Field] }}</span>
+                                <span class="badge badge-fk">→ {{ $fkMap[$col->Field] }}</span>
                             @else
                                 <span style="color:#cbd5e1;">—</span>
                             @endif
                         </td>
                         <td>
-                            <div class="col-actions">
-                                @if ($col->Key !== 'PRI')
-                                    <button type="button" class="btn-xs btn-xs-edit"
-                                        onclick="toggleEditRow('{{ $col->Field }}')">Edit</button>
-                                    <form method="POST"
-                                        action="{{ route('admin.sandbox.table.dropColumn', [$sandbox, $table]) }}"
-                                        onsubmit="return confirm('Hapus kolom {{ $col->Field }}? Data di kolom ini akan hilang.')"
-                                        style="display:inline;">
+                            @if ($col->Key !== 'PRI')
+                                <div class="col-actions">
+                                    <button type="button" class="btn-xs btn-xs-edit" onclick="toggleEditRow('{{ $col->Field }}')">Edit</button>
+                                    <form method="POST" action="{{ route('admin.sandbox.table.dropColumn', [$sandbox, $table]) }}" onsubmit="return confirm('Hapus kolom {{ $col->Field }}? Data di kolom ini akan hilang.')" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <input type="hidden" name="column" value="{{ $col->Field }}">
                                         <button type="submit" class="btn-xs btn-xs-del">Hapus</button>
                                     </form>
-                                @else
-                                    <span style="color:#cbd5e1; font-size:12px;">—</span>
-                                @endif
-                            </div>
+                                </div>
+                            @else
+                                <span style="color:#cbd5e1; font-size:12px;">—</span>
+                            @endif
                         </td>
                     </tr>
 
-                    {{-- Edit row --}}
+                    {{-- Inline edit row --}}
                     @if ($col->Key !== 'PRI')
-                        <tr id="editRow-{{ $col->Field }}" style="display:none; background:#f8f9fc;">
-                            <td colspan="5">
-                                <form method="POST"
-                                    action="{{ route('admin.sandbox.table.modifyColumn', [$sandbox, $table]) }}"
-                                    style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <tr class="edit-row" id="editRow-{{ $col->Field }}" style="display:none;">
+                            <td colspan="5" style="padding:14px 16px;">
+                                <form method="POST" action="{{ route('admin.sandbox.table.modifyColumn', [$sandbox, $table]) }}" class="inline-edit-form">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="old_name" value="{{ $col->Field }}">
-                                    <div class="field" style="display:flex; flex-direction:column; gap:3px;">
-                                        <label style="font-size:10px; color:#94a3b8; font-weight:700;">NAMA</label>
-                                        <input type="text" name="new_name" value="{{ $col->Field }}" required
-                                            style="padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px; font-size:13px; font-family:inherit; width:140px;">
+                                    <div class="inline-field">
+                                        <label>Nama</label>
+                                        <input type="text" name="new_name" value="{{ $col->Field }}" required style="width:140px;">
                                     </div>
-                                    <div class="field" style="display:flex; flex-direction:column; gap:3px;">
-                                        <label style="font-size:10px; color:#94a3b8; font-weight:700;">TIPE</label>
-                                        <select name="type"
-                                            style="padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px; font-size:13px; font-family:inherit;">
+                                    <div class="inline-field">
+                                        <label>Tipe</label>
+                                        <select name="type">
                                             @foreach (['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'DECIMAL', 'BOOLEAN'] as $t)
-                                                <option value="{{ $t }}"
-                                                    {{ str_starts_with(strtoupper($col->Type), strtolower($t)) ? 'selected' : '' }}>
-                                                    {{ $t }}</option>
+                                                <option value="{{ $t }}" {{ str_starts_with(strtoupper($col->Type), $t) ? 'selected' : '' }}>{{ $t }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="field" style="display:flex; flex-direction:column; gap:3px;">
-                                        <label style="font-size:10px; color:#94a3b8; font-weight:700;">LENGTH</label>
-                                        <input type="number" name="length" min="1"
-                                            style="padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px; font-size:13px; font-family:inherit; width:80px;"
-                                            value="{{ preg_match('/\((\d+)\)/', $col->Type, $m) ? $m[1] : '' }}">
+                                    <div class="inline-field">
+                                        <label>Length</label>
+                                        <input type="number" name="length" min="1" value="{{ preg_match('/\((\d+)\)/', $col->Type, $m) ? $m[1] : '' }}">
                                     </div>
-                                    <div style="display:flex; align-items:center; gap:4px; padding-top:16px;">
-                                        <label
-                                            style="font-size:12px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                                            <input type="checkbox" name="nullable" value="1"
-                                                {{ $col->Null === 'YES' ? 'checked' : '' }}> Null
-                                        </label>
-                                    </div>
-                                    <div style="display:flex; gap:6px; padding-top:16px;">
-                                        <button type="submit" class="btn-xs"
-                                            style="color:#16a34a; background:#f0fdf4;">Simpan</button>
-                                        <button type="button" class="btn-xs" style="color:#64748b; background:#f1f5f9;"
-                                            onclick="toggleEditRow('{{ $col->Field }}')">Batal</button>
+                                    <label class="inline-field null-check">
+                                        <input type="checkbox" name="nullable" value="1" {{ $col->Null === 'YES' ? 'checked' : '' }}> Null
+                                    </label>
+                                    <div style="display:flex; gap:6px; padding-top:14px;">
+                                        <button type="submit" class="btn-xs btn-xs-save">Simpan</button>
+                                        <button type="button" class="btn-xs btn-xs-cancel" onclick="toggleEditRow('{{ $col->Field }}')">Batal</button>
                                     </div>
                                 </form>
                             </td>
@@ -361,25 +198,25 @@
         </table>
     </div>
 
-    <!-- Add Column -->
-    <div class="section-label">Tambah Kolom Baru</div>
+    <hr class="section-divider">
+
+    {{-- Add Column --}}
+    <div class="section-title">Tambah Kolom Baru</div>
     <div class="add-col-card">
         @if ($errors->any())
             <div class="form-errors" style="margin-bottom:16px;">
-                @foreach ($errors->all() as $e)
-                    <div>{{ $e }}</div>
-                @endforeach
+                @foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach
             </div>
         @endif
 
         <form method="POST" action="{{ route('admin.sandbox.table.addColumn', [$sandbox, $table]) }}">
             @csrf
             <div class="add-col-row">
-                <div class="field">
+                <div class="add-col-field">
                     <label>Nama Kolom *</label>
                     <input type="text" name="name" required placeholder="nama_kolom" style="width:160px;">
                 </div>
-                <div class="field">
+                <div class="add-col-field">
                     <label>Tipe *</label>
                     <select name="type">
                         <option value="INT">INT</option>
@@ -391,35 +228,34 @@
                         <option value="BOOLEAN">BOOLEAN</option>
                     </select>
                 </div>
-                <div class="field">
+                <div class="add-col-field">
                     <label>Length</label>
                     <input type="number" name="length" min="1" placeholder="255" style="width:80px;">
                 </div>
-                <div style="display:flex; align-items:center; gap:4px; padding-bottom:2px;">
-                    <label
-                        style="font-size:12px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                        <input type="checkbox" name="nullable" value="1" checked> Null
-                    </label>
-                </div>
+                <label class="add-col-field null-check">
+                    <input type="checkbox" name="nullable" value="1" checked> Null
+                </label>
             </div>
 
             @if ($existingTables->count())
-                <div class="fk-row">
-                    <span class="fk-label">Foreign Key (opsional):</span>
-                    <div class="field">
-                        <label>Tabel Referensi</label>
-                        <select name="fk_table" id="addFkTable" onchange="loadAddFkColumns()">
-                            <option value="">Tidak ada</option>
-                            @foreach ($existingTables as $et)
-                                <option value="{{ $et->table_name }}">{{ $et->display_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Kolom Referensi</label>
-                        <select name="fk_column" id="addFkColumn">
-                            <option value="">— Kolom —</option>
-                        </select>
+                <div class="fk-section">
+                    <div class="fk-section-label">Foreign Key (opsional)</div>
+                    <div class="fk-row">
+                        <div class="add-col-field">
+                            <label>Tabel Referensi</label>
+                            <select name="fk_table" id="addFkTable" onchange="loadAddFkColumns()">
+                                <option value="">Tidak ada</option>
+                                @foreach ($existingTables as $et)
+                                    <option value="{{ $et->table_name }}">{{ $et->display_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="add-col-field">
+                            <label>Kolom Referensi</label>
+                            <select name="fk_column" id="addFkColumn">
+                                <option value="">— Kolom —</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -428,9 +264,10 @@
         </form>
     </div>
 
-    <div style="margin-top:16px;">
-        <a href="{{ route('admin.sandbox.table.show', [$sandbox, $table]) }}"
-            style="color:#3b5bdb; text-decoration:none; font-size:14px; font-weight:600;">← Kembali ke Data Tabel</a>
+    <div style="margin-top:20px;">
+        <a href="{{ route('admin.sandbox.table.show', [$sandbox, $table]) }}" style="color:#3b5bdb; text-decoration:none; font-size:13px; font-weight:600;">
+            ← Kembali ke Data Tabel
+        </a>
     </div>
 
     <x-slot:scripts>

@@ -14,10 +14,8 @@ class Profile extends Model
         'full_name',
         'nim',
         'gender',
-        'kelas',
-        'school_name',
+        'kelas_id',
         'avatar',
-        'tahun_ajaran',
     ];
 
     public function user()
@@ -25,12 +23,25 @@ class Profile extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function kelas()
+    {
+        return $this->belongsTo(\App\Models\Kelas::class);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (!$this->avatar) return null;
+        // Google OAuth atau URL eksternal lain — gunakan langsung
+        if (str_starts_with($this->avatar, 'http')) return $this->avatar;
+        // File lokal di storage
+        return asset('storage/' . $this->avatar);
+    }
+
     public function isComplete(): bool
     {
         return !empty($this->full_name)
             && !empty($this->nim)
             && !empty($this->gender)
-            && !empty($this->kelas)
-            && !empty($this->school_name);
+            && !empty($this->kelas_id);
     }
 }

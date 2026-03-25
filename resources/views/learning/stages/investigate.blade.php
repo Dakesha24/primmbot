@@ -4,127 +4,246 @@
     <style>
         .main-inner {
             max-width: 100% !important;
-            padding: 2rem 1.5rem !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            height: calc(100vh - 56px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-widget { border-radius:14px; border:1px solid rgba(255,255,255,0.08); overflow:hidden; background:rgba(255,255,255,0.02); }
+        .chat-header { padding:0.7rem 1rem; background:rgba(37,99,235,0.15); border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:0.7rem; }
+        .chat-bot-icon { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--blue-600),#4f46e5); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .chat-body { height:280px; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.75rem; }
+        .chat-body::-webkit-scrollbar { width:4px; }
+        .chat-body::-webkit-scrollbar-track { background:transparent; }
+        .chat-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+        .chat-row { display:flex; align-items:flex-end; gap:0.5rem; }
+        .chat-row.user-row { flex-direction:row-reverse; }
+        .chat-avatar-small { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--blue-600),#4f46e5); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .chat-bubble { max-width:78%; padding:0.6rem 0.85rem; font-size:0.8rem; line-height:1.55; word-break:break-word; }
+        .bot-bubble { background:rgba(37,99,235,0.18); color:#93c5fd; border-radius:14px 14px 14px 4px; }
+        .user-bubble { background:rgba(255,255,255,0.08); color:#e2e8f0; border-radius:14px 14px 4px 14px; white-space:pre-wrap; }
+        #btn-submit { padding:0.6rem 1.2rem; border-radius:8px; border:none; background:linear-gradient(135deg,var(--blue-600),#4f46e5); color:#fff; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:inherit; box-shadow:0 4px 16px rgba(37,99,235,0.3); transition:all 0.2s; }
+        #btn-submit:disabled:not(.btn-done) { background:rgba(20,20,30,0.9) !important; color:#475569 !important; cursor:not-allowed !important; box-shadow:none !important; border:1px solid rgba(255,255,255,0.08) !important; pointer-events:none !important; }
+        #btn-submit.btn-done { background:linear-gradient(135deg,#16a34a,#15803d) !important; color:#fff !important; cursor:default !important; pointer-events:none !important; }
+        .chat-typing { display:flex; gap:5px; align-items:center; padding:0.5rem 0.75rem; }
+        .chat-typing span { width:7px; height:7px; border-radius:50%; background:#60a5fa; animation:typingBounce 1.2s infinite; }
+        .chat-typing span:nth-child(2) { animation-delay:0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay:0.4s; }
+        @keyframes typingBounce { 0%,60%,100%{ transform:translateY(0); opacity:0.4; } 30%{ transform:translateY(-6px); opacity:1; } }
+        .chat-footer { padding:0.6rem; border-top:1px solid rgba(255,255,255,0.06); display:flex; gap:0.5rem; background:rgba(0,0,0,0.12); }
+        .chat-input { flex:1; padding:0.5rem 0.85rem; border-radius:20px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:0.82rem; font-family:inherit; outline:none; transition:border-color 0.2s; }
+        .chat-input:focus { border-color:rgba(37,99,235,0.5); }
+        .chat-send-btn { width:36px; height:36px; border-radius:50%; border:none; background:linear-gradient(135deg,var(--blue-600),#4f46e5); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.2s; }
+        .chat-send-btn:disabled { opacity:0.45; cursor:not-allowed; }
+
+        .inv-header {
+            padding: 0.6rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            flex-shrink: 0;
+            background: rgba(10,22,40,0.5);
+            backdrop-filter: blur(8px);
         }
 
         .inv-layout {
+            flex: 1;
             display: grid;
             grid-template-columns: 2fr 3fr;
-            gap: 1.2rem;
-            align-items: start;
+            gap: 0;
+            overflow: hidden;
+            min-height: 0;
         }
 
         .inv-left {
+            overflow-y: auto;
+            padding: 1.4rem 1.5rem;
+            border-right: 1px solid rgba(255,255,255,0.06);
             min-width: 0;
         }
 
         .inv-right {
+            overflow-y: auto;
+            padding: 1.4rem 1.5rem;
             min-width: 0;
         }
 
-        .editor-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+        .inv-left::-webkit-scrollbar,
+        .inv-right::-webkit-scrollbar { width: 7px; }
+        .inv-left::-webkit-scrollbar-track,
+        .inv-right::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+        .inv-left::-webkit-scrollbar-thumb,
+        .inv-right::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 6px; }
+        .inv-left::-webkit-scrollbar-thumb:hover,
+        .inv-right::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.32); }
 
-        .editor-toolbar {
+        .inv-nav {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 0.5rem 0.8rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .editor-toolbar-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #94a3b8;
-            display: flex;
             align-items: center;
-            gap: 0.4rem;
+            padding: 0.6rem 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            background: rgba(10,22,40,0.5);
+            backdrop-filter: blur(8px);
+            flex-shrink: 0;
         }
 
-        .editor-toolbar-dots {
-            display: flex;
+        .inv-nav .nav-btn {
+            padding: 0.45rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 8px;
             gap: 0.35rem;
         }
 
-        .editor-toolbar-dots span {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .editor-textarea {
-            width: 100%;
-            min-height: 140px;
-            padding: 1rem;
-            border: none;
-            outline: none;
-            resize: vertical;
-            background: transparent;
-            color: #a6e3a1;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            line-height: 1.7;
-        }
-
-        .editor-textarea::placeholder {
-            color: #475569;
-        }
-
-        .editor-output {
-            padding: 1rem;
-            min-height: 80px;
-            color: #cdd6f4;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-        }
-
-        .editor-output table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .editor-output th {
-            background: rgba(255, 255, 255, 0.05);
+        .inv-nav .nav-btn-prev {
             color: #94a3b8;
-            font-weight: 600;
-            padding: 0.45rem 0.6rem;
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.75rem;
+            border-color: rgba(255,255,255,0.18);
         }
 
-        .editor-output td {
-            padding: 0.4rem 0.6rem;
+        .inv-nav .nav-btn-prev:hover {
+            color: #e2e8f0;
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.28);
+        }
+
+        .inv-nav .nav-btn-next {
             color: #cbd5e1;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            font-size: 0.8rem;
+            background: rgba(100,116,139,0.25);
+            border: 1px solid rgba(148,163,184,0.3);
+            box-shadow: none;
         }
 
-        .editor-output tr:nth-child(even) td {
-            background: rgba(255, 255, 255, 0.02);
+        .inv-nav .nav-btn-next:hover {
+            color: #fff;
+            background: rgba(100,116,139,0.38);
+            border-color: rgba(148,163,184,0.5);
+            transform: none;
+            box-shadow: none;
         }
 
-        .btn-run {
-            padding: 0.35rem 0.7rem;
-            border-radius: 6px;
+        @media (max-width: 900px) {
+            .inv-layout { grid-template-columns: 1fr; overflow-y: auto; }
+            .inv-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        }
+
+        .editor-wrap {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .editor-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.7rem;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .editor-bar-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .editor-bar-btns {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .btn-editor {
+            padding: 0.3rem 0.6rem;
+            border-radius: 5px;
             border: none;
-            background: #a6e3a1;
-            color: #0a1628;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
             transition: all 0.15s;
         }
 
+        .btn-run {
+            background: #a6e3a1;
+            color: #0a1628;
+        }
+
         .btn-run:hover {
             background: #94e2d5;
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+        }
+
+        .btn-reset:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        .editor-code {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.8rem;
+            border: none;
+            outline: none;
+            resize: vertical;
+            background: transparent;
+            color: #a6e3a1;
+            font-family: 'Courier New', monospace;
+            font-size: 0.83rem;
+            line-height: 1.7;
+        }
+
+        .editor-code::placeholder {
+            color: #475569;
+        }
+
+        .editor-output {
+            padding: 0.8rem;
+            min-height: 60px;
+            color: #cdd6f4;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            overflow-x: auto;
+        }
+
+        .editor-output table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+
+        .editor-output th {
+            background: rgba(255,255,255,0.05);
+            color: #94a3b8;
+            font-weight: 600;
+            padding: 0.4rem 0.5rem;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.72rem;
+        }
+
+        .editor-output td {
+            padding: 0.35rem 0.5rem;
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.78rem;
+        }
+
+        .editor-output tr:nth-child(even) td {
+            background: rgba(255,255,255,0.02);
         }
 
         .level-tabs {
@@ -224,9 +343,8 @@
             overflow-y: auto;
             max-height: 250px;
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 8px;
+            border-radius: 0;
         }
-
         .db-table table {
             width: 100%;
             border-collapse: collapse;
@@ -263,46 +381,49 @@
             margin-top: 0.5rem;
         }
 
-        @media (max-width: 768px) {
-            .inv-layout {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 
-    <h1 style="text-align:center;font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:1.5rem;letter-spacing:-0.3px;">
-        INVESTIGATE</h1>
+    <div class="inv-header">
+        <h1 style="font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:0.06em;text-transform:uppercase;">Investigate</h1>
+        <button onclick="document.getElementById('help-modal').style.display='flex'" style="width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#94a3b8;font-size:0.7rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.14)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='#94a3b8'">?</button>
+    </div>
+    <div id="help-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="background:#0d1f3a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.5rem 1.75rem;max-width:460px;width:90%;position:relative;">
+            <button onclick="document.getElementById('help-modal').style.display='none'" style="position:absolute;top:0.9rem;right:1rem;background:transparent;border:none;color:#64748b;font-size:1.1rem;cursor:pointer;line-height:1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#64748b'">✕</button>
+            <h3 style="font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;">
+                <span style="background:rgba(37,99,235,0.2);color:var(--blue-400);padding:0.2rem 0.7rem;border-radius:6px;font-size:0.8rem;">INVESTIGATE</span>
+                Petunjuk Tahap
+            </h3>
+            <ul style="font-size:0.85rem;color:#94a3b8;line-height:1.8;padding-left:1.2rem;">
+                <li>Coba modifikasi kode SQL di editor dan klik <strong style="color:#cbd5e1;">Run ▶</strong> untuk melihat hasilnya</li>
+                <li>Analisis bagaimana query bekerja berdasarkan perubahan yang kamu buat</li>
+                <li>Jawab pertanyaan analisis di kolom jawaban</li>
+                <li>Klik <strong style="color:#cbd5e1;">Cek</strong> untuk mendapat umpan balik, lalu <strong style="color:#cbd5e1;">Submit</strong></li>
+            </ul>
+        </div>
+    </div>
 
     <div class="inv-layout">
 
         {{-- KIRI: Code Editor + Output --}}
         <div class="inv-left">
             @if ($activity->code_snippet)
-                <div class="editor-card">
-                    <div class="editor-toolbar">
-                        <div class="editor-toolbar-dots">
-                            <span style="background:#f38ba8;"></span>
-                            <span style="background:#f9e2af;"></span>
-                            <span style="background:#a6e3a1;"></span>
+                <div class="editor-wrap">
+                    <div class="editor-bar">
+                        <span class="editor-bar-title">SQL Editor</span>
+                        <div class="editor-bar-btns">
+                            <button id="btn-reset" class="btn-editor btn-reset" style="display:flex;align-items:center;gap:0.3rem;">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0115.36-6.36M20 15a9 9 0 01-15.36 6.36"/>
+                                </svg>
+                                Reset
+                            </button>
+                            <button id="btn-run" class="btn-editor btn-run">Run ▶</button>
                         </div>
-                        <span class="editor-toolbar-title">SQL Query</span>
-                        <button id="btn-run" class="btn-run">Run ▶</button>
                     </div>
-                    <textarea id="sql-editor" class="editor-textarea">{{ $activity->code_snippet }}</textarea>
-                </div>
-
-                <div class="editor-card" style="margin-top:0.8rem;">
-                    <div class="editor-toolbar">
-                        <span class="editor-toolbar-title">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                            Output
-                        </span>
-                    </div>
+                    <textarea id="sql-editor" class="editor-code" spellcheck="false">{{ $activity->code_snippet }}</textarea>
                     <div id="sql-output" class="editor-output">
-                        <span style="color:#45475a;font-style:italic;">Klik Run untuk melihat hasil...</span>
+                        <span style="color:#475569;font-style:italic;">Klik Run untuk melihat hasil...</span>
                     </div>
                 </div>
             @endif
@@ -411,41 +532,6 @@
                         @endforeach
                     </div>
 
-                    <div class="q-nav">
-                        @if ($prevActivity)
-                            <a href="{{ route('learning.activity', [$chapter, $prevActivity]) }}" class="q-nav-btn">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </a>
-                        @else
-                            <span class="q-nav-btn" disabled>
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </span>
-                        @endif
-
-                        <span class="q-nav-counter">{{ $currentNumber }} / {{ $totalSiblings }}</span>
-
-                        @if ($nextActivity)
-                            <a href="{{ route('learning.activity', [$chapter, $nextActivity]) }}" class="q-nav-btn">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        @else
-                            <span class="q-nav-btn" disabled>
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </span>
-                        @endif
-                    </div>
                 </div>
 
                 {{-- Pertanyaan --}}
@@ -475,47 +561,105 @@
                             style="padding:0.6rem 1.2rem;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#cbd5e1;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;"
                             onmouseover="this.style.background='rgba(255,255,255,0.06)'"
                             onmouseout="this.style.background='transparent'">Cek</button>
-                        <button id="btn-submit"
-                            style="padding:0.6rem 1.2rem;border-radius:8px;border:none;background:linear-gradient(135deg,var(--blue-600),#4f46e5);color:#fff;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(37,99,235,0.3);transition:all 0.2s;">Submit</button>
+                        <button id="btn-submit" {{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? '' : 'disabled' }}>Submit</button>
+                    </div>
+                    <p id="submit-hint" style="font-size:0.75rem;color:#64748b;margin-top:0.5rem;display:{{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? 'none' : 'block' }};">
+                        Klik <strong style="color:#94a3b8;">Cek</strong> terlebih dahulu sebelum submit.
+                    </p>
+
+                    @php $navStyle = "display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.2rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#cbd5e1;font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;"; @endphp
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.06);">
+                        @if ($prevActivity)
+                            <a href="{{ route('learning.activity', [$chapter, $prevActivity]) }}" style="{{ $navStyle }}"
+                                onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#cbd5e1'">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                                Soal Sebelumnya
+                            </a>
+                        @else
+                            <div></div>
+                        @endif
+                        @if ($nextActivity)
+                            @if ($submission)
+                                <a href="{{ route('learning.activity', [$chapter, $nextActivity]) }}" style="{{ $navStyle }}"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#cbd5e1'">
+                                    Soal Berikutnya
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            @else
+                                <span title="Selesaikan soal ini terlebih dahulu" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#475569;font-size:0.85rem;font-weight:600;cursor:not-allowed;">
+                                    Soal Berikutnya
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </span>
+                            @endif
+                        @else
+                            <div></div>
+                        @endif
                     </div>
 
-                    @if ($submission && $submission->ai_feedback)
-                        <div id="feedback-box"
-                            style="margin-top:1rem;padding:0.8rem 1rem;border-radius:10px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.2);font-size:0.85rem;color:#fde047;">
-                            {{ $submission->ai_feedback }}</div>
-                    @endif
                 </div>
             </div>
 
             {{-- Virtual Assistant --}}
-            <div class="content-card" style="margin-top:1.2rem;">
-                <h3
-                    style="font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;">
-                    <svg width="18" height="18" fill="none" stroke="var(--cyan-400)" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    Virtual Assistant
-                </h3>
-                <div id="chat-messages"
-                    style="min-height:100px;max-height:220px;overflow-y:auto;padding:0.5rem;background:rgba(0,0,0,0.15);border-radius:10px;margin-bottom:0.8rem;">
-                    <p style="font-size:0.8rem;color:#475569;font-style:italic;">Tanyakan sesuatu ke asisten virtual...</p>
+            <div class="chat-widget" style="margin-top:1.2rem;">
+                <div class="chat-header">
+                    <div class="chat-bot-icon">
+                        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:700;color:#fff;line-height:1.2;">PRIMM Bot</div>
+                        <div style="font-size:0.7rem;color:#4ade80;display:flex;align-items:center;gap:0.3rem;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>Online
+                        </div>
+                    </div>
                 </div>
-                <div style="display:flex;gap:0.5rem;">
-                    <input type="text" id="chat-input"
-                        style="flex:1;padding:0.55rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85rem;font-family:inherit;outline:none;"
-                        placeholder="Ketik pertanyaanmu...">
-                    <button id="btn-chat"
-                        style="padding:0.55rem 0.8rem;border-radius:8px;border:none;background:linear-gradient(135deg,var(--blue-600),#4f46e5);color:#fff;cursor:pointer;display:flex;align-items:center;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
+                <div id="chat-messages" class="chat-body">
+                    @if ($chatLogs->isEmpty())
+                    <div class="chat-row">
+                        <div class="chat-avatar-small"><svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg></div>
+                        <div class="chat-bubble bot-bubble">Halo! Saya PRIMM Bot 👋 Di tahap Investigate, kita analisis query lebih dalam. Kalau ada bagian query yang belum kamu pahami, langsung tanyakan ke sini ya!</div>
+                    </div>
+                    @else
+                    @foreach ($chatLogs as $log)
+                    <div class="chat-row user-row">
+                        <div class="chat-bubble user-bubble" style="white-space:pre-wrap;">{{ $log->prompt_sent }}</div>
+                    </div>
+                    <div class="chat-row">
+                        <div class="chat-avatar-small"><svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg></div>
+                        <div class="chat-bubble bot-bubble">{{ $log->response_received }}</div>
+                    </div>
+                    @endforeach
+                    @endif
+                </div>
+                <div class="chat-footer">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="Ketik pertanyaanmu...">
+                    <button id="btn-chat" class="chat-send-btn">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
                     </button>
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- Nav bar --}}
+    <div class="inv-nav">
+        @php $runActivity = $chapter->activities->where('stage', 'run')->first(); @endphp
+        @if($runActivity)
+            <a href="{{ route('learning.activity', [$chapter, $runActivity]) }}" class="nav-btn nav-btn-prev">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Tahap Run
+            </a>
+        @else
+            <div></div>
+        @endif
+        @php $modifyActivity = $chapter->activities->where('stage', 'modify')->first(); @endphp
+        @if($modifyActivity)
+            <a href="{{ route('learning.activity', [$chapter, $modifyActivity]) }}" class="nav-btn nav-btn-next">
+                Tahap Modify
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        @else
+            <div></div>
+        @endif
     </div>
 
     {{-- Mermaid Library --}}
@@ -534,35 +678,6 @@
     </script>
 @endsection
 
-@section('nav_prev')
-    @php $runActivity = $chapter->activities->where('stage', 'run')->first(); @endphp
-    @if ($runActivity)
-        <a href="{{ route('learning.activity', [$chapter, $runActivity]) }}" class="nav-btn nav-btn-prev">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Tahap Run
-        </a>
-    @else
-        <div></div>
-    @endif
-@endsection
-
-@section('nav_next')
-    @php $modifiedActivity = $chapter->activities->where('stage', 'modified')->first(); @endphp
-    @if ($modifiedActivity)
-        <a href="{{ route('learning.activity', [$chapter, $modifiedActivity]) }}" class="nav-btn nav-btn-next">
-            Tahap Modified
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-        </a>
-    @else
-        <div></div>
-    @endif
-@endsection
 
 @push('scripts')
     <script>
@@ -572,15 +687,25 @@
             const answerText = document.getElementById('answer-text');
             const sqlEditor = document.getElementById('sql-editor');
             const btnRun = document.getElementById('btn-run');
+            const btnReset = document.getElementById('btn-reset');
             const btnCek = document.getElementById('btn-cek');
             const btnSubmit = document.getElementById('btn-submit');
             const sqlOutput = document.getElementById('sql-output');
+            const defaultCode = @json($activity->code_snippet ?? '');
+            const submitHint = document.getElementById('submit-hint');
+            let submitUnlocked = {{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? 'true' : 'false' }};
+
+            function setSubmitLocked(locked) {
+                btnSubmit.disabled = locked;
+                if (submitHint) submitHint.style.display = locked ? 'block' : 'none';
+            }
+            setSubmitLocked(!submitUnlocked);
 
             if (Object.keys(sandboxTables).length > 0) {
                 loadTables();
                 const erdBtn = document.querySelector('[onclick*="erdModal"]');
                 if (erdBtn) {
-                    erdBtn.addEventListener('click', () => setTimeout(() => renderErd('erd-large'), 100));
+                    erdBtn.addEventListener('click', () => setTimeout(() => renderErd('erd-large', generateDynamicErd()), 100));
                 }
             }
 
@@ -691,6 +816,13 @@
                 }
             }
 
+            if (btnReset && sqlEditor) {
+                btnReset.addEventListener('click', function() {
+                    sqlEditor.value = defaultCode;
+                    sqlOutput.innerHTML = '<span style="color:#475569;font-style:italic;">Klik Run untuk melihat hasil...</span>';
+                });
+            }
+
             if (btnRun && sqlEditor) {
                 btnRun.addEventListener('click', async function() {
                     const query = sqlEditor.value.trim();
@@ -746,9 +878,11 @@
                 btnCek.addEventListener('click', async function() {
                     const text = answerText.value.trim();
                     if (!text) {
-                        showFB('Tulis jawabanmu dulu.', 'red');
+                        addChat('assistant', '⚠️ Tulis jawabanmu dulu.');
                         return;
                     }
+                    addChat('user', 'Cek jawaban:\n' + text);
+                    showTyping();
                     btnCek.disabled = true;
                     btnCek.textContent = 'Memeriksa...';
                     try {
@@ -766,13 +900,13 @@
                         });
                         const data = await res.json();
                         if (data.success) {
-                            showFB(data.feedback, 'yellow');
                             addChat('assistant', data.feedback);
+                            if (!submitUnlocked) { submitUnlocked = true; setSubmitLocked(false); }
                         } else {
-                            showFB(data.error, 'red');
+                            addChat('assistant', '❌ ' + (data.error || 'Terjadi kesalahan.'));
                         }
                     } catch (e) {
-                        showFB('Kesalahan koneksi.', 'red');
+                        addChat('assistant', '❌ Terjadi kesalahan koneksi.');
                     }
                     btnCek.disabled = false;
                     btnCek.textContent = 'Cek';
@@ -783,10 +917,12 @@
                 btnSubmit.addEventListener('click', async function() {
                     const text = answerText.value.trim();
                     if (!text) {
-                        showFB('Tulis jawabanmu dulu.', 'red');
+                        addChat('assistant', '⚠️ Tulis jawabanmu dulu.');
                         return;
                     }
                     if (!confirm('Yakin ingin submit?')) return;
+                    addChat('user', 'Submit jawaban:\n' + text);
+                    showTyping();
                     btnSubmit.disabled = true;
                     btnSubmit.textContent = 'Mengirim...';
                     try {
@@ -804,68 +940,109 @@
                         });
                         const data = await res.json();
                         if (data.success && data.is_correct) {
-                            showFB('✅ ' + data.feedback + ' (Skor: ' + data.score + '/100)', 'green');
-                            addChat('assistant', '✅ ' + data.feedback);
+                            addChat('assistant', '✅ ' + data.feedback + ' (Skor: ' + data.score + '/100)');
+                            btnSubmit.classList.add('btn-done');
+                            btnSubmit.style.removeProperty('background');
                             btnSubmit.textContent = 'Selesai ✓';
                             btnSubmit.disabled = true;
-                            btnSubmit.style.background = '#16a34a';
-                            btnSubmit.style.boxShadow = 'none';
                         } else if (data.success) {
-                            showFB('⚠️ ' + data.feedback + ' Perbaiki jawabanmu.', 'yellow');
-                            addChat('assistant', '⚠️ ' + data.feedback);
+                            addChat('assistant', '⚠️ ' + data.feedback + ' Perbaiki jawabanmu.');
                             btnSubmit.disabled = false;
                             btnSubmit.textContent = 'Submit';
                         } else {
-                            showFB(data.error, 'red');
+                            addChat('assistant', '❌ ' + (data.error || 'Terjadi kesalahan.'));
                             btnSubmit.disabled = false;
                             btnSubmit.textContent = 'Submit';
                         }
                     } catch (e) {
-                        showFB('Kesalahan koneksi.', 'red');
+                        addChat('assistant', '❌ Terjadi kesalahan koneksi.');
                         btnSubmit.disabled = false;
                         btnSubmit.textContent = 'Submit';
                     }
                 });
             }
 
-            function showFB(msg, color) {
-                let box = document.getElementById('feedback-box');
-                if (!box) {
-                    box = document.createElement('div');
-                    box.id = 'feedback-box';
-                    document.querySelector('div[style*="border-top"]').appendChild(box);
-                }
-                const c = {
-                    red: 'background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#fca5a5;',
-                    yellow: 'background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.2);color:#fde047;',
-                    green: 'background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#86efac;'
-                };
-                box.style.cssText = 'margin-top:1rem;padding:0.8rem;border-radius:10px;font-size:0.85rem;' + (c[
-                    color] || c.yellow);
-                box.textContent = msg;
-            }
+            const botAvatarSvg = `<svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg>`;
 
             function addChat(role, msg) {
                 const cb = document.getElementById('chat-messages');
                 if (!cb) return;
-                const p = cb.querySelector('p[style*="italic"]');
-                if (p) p.remove();
-                const d = document.createElement('div');
-                d.style.cssText =
-                    'margin-bottom:0.6rem;padding:0.5rem 0.7rem;border-radius:8px;font-size:0.8rem;line-height:1.5;max-width:90%;' +
-                    (role === 'assistant' ? 'background:rgba(37,99,235,0.15);color:var(--blue-300);' :
-                        'background:rgba(255,255,255,0.06);color:#cbd5e1;margin-left:auto;');
-                d.textContent = msg;
-                cb.appendChild(d);
+                const typing = cb.querySelector('.chat-typing-row');
+                if (typing) typing.remove();
+                const row = document.createElement('div');
+                row.className = 'chat-row' + (role === 'user' ? ' user-row' : '');
+                if (role === 'assistant') {
+                    const av = document.createElement('div');
+                    av.className = 'chat-avatar-small';
+                    av.innerHTML = botAvatarSvg;
+                    const bub = document.createElement('div');
+                    bub.className = 'chat-bubble bot-bubble';
+                    bub.textContent = msg;
+                    row.appendChild(av);
+                    row.appendChild(bub);
+                } else {
+                    const bub = document.createElement('div');
+                    bub.className = 'chat-bubble user-bubble';
+                    bub.textContent = msg;
+                    row.appendChild(bub);
+                }
+                cb.appendChild(row);
                 cb.scrollTop = cb.scrollHeight;
             }
 
+            function showTyping() {
+                const cb = document.getElementById('chat-messages');
+                if (!cb) return;
+                const row = document.createElement('div');
+                row.className = 'chat-row chat-typing-row';
+                row.innerHTML = `<div class="chat-avatar-small">${botAvatarSvg}</div><div class="chat-bubble bot-bubble chat-typing"><span></span><span></span><span></span></div>`;
+                cb.appendChild(row);
+                cb.scrollTop = cb.scrollHeight;
+            }
+
+            // Virtual Assistant Chat
+            let chatHistory = @json($chatHistory);
+
+            const btnChat   = document.getElementById('btn-chat');
+            const chatInput = document.getElementById('chat-input');
+
+            if (btnChat && chatInput) {
+                async function sendChat() {
+                    const msg = chatInput.value.trim();
+                    if (!msg) return;
+                    addChat('user', msg);
+                    chatInput.value = '';
+                    chatHistory.push({ role: 'user', message: msg });
+                    btnChat.disabled = true;
+                    showTyping();
+                    try {
+                        const res = await fetch('{{ route('api.chat') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                            body: JSON.stringify({ activity_id: activityId, message: msg, history: chatHistory.slice(-6) }),
+                        });
+                        const data = await res.json();
+                        const reply = data.success ? data.response : 'Maaf, terjadi kesalahan. Coba lagi.';
+                        addChat('assistant', reply);
+                        if (data.success) chatHistory.push({ role: 'assistant', message: reply });
+                    } catch (e) {
+                        addChat('assistant', 'Maaf, tidak dapat terhubung ke asisten.');
+                    }
+                    btnChat.disabled = false;
+                }
+                btnChat.addEventListener('click', sendChat);
+                chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+            }
+
             @if ($submission && $submission->is_correct)
+                btnSubmit.classList.add('btn-done');
+                btnSubmit.style.removeProperty('background');
                 btnSubmit.textContent = 'Selesai ✓';
                 btnSubmit.disabled = true;
-                btnSubmit.style.background = '#16a34a';
-                btnSubmit.style.boxShadow = 'none';
             @endif
+
+            const chatBoxEl = document.getElementById('chat-messages');
+            if (chatBoxEl) chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
         });
     </script>
 @endpush
