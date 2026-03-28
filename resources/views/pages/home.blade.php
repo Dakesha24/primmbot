@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PRIMMBOT</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
@@ -76,13 +77,23 @@
         }
 
         .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 800;
             font-size: 1.3rem;
             color: #fff;
             letter-spacing: -0.5px;
         }
 
-        .logo span {
+        .logo img {
+            height: 30px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo .logo-text { color: #fff; }
+        .logo .logo-text span {
             color: var(--cyan-400);
         }
 
@@ -367,7 +378,7 @@
 
     <!-- Navbar -->
     <nav>
-        <div class="logo">PRIMM<span>BOT</span></div>
+        <div class="logo"><img src="{{ asset('assets/images/logo.png') }}" alt="PRIMMBOT"><span class="logo-text">PRIMM<span>BOT</span></span></div>
         <div class="nav-links">
             <a href="#features">Tentang</a>
             <a href="#faq">FAQ</a>

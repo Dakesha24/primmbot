@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Admin' }} — PRIMMBOT</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
@@ -45,10 +46,19 @@
         }
 
         .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 16px;
             font-weight: 800;
             color: #fff;
             letter-spacing: -0.02em;
+        }
+
+        .topbar-brand img {
+            height: 28px;
+            width: auto;
+            object-fit: contain;
         }
 
         .topbar-badge {
@@ -383,7 +393,7 @@
     <!-- Topbar -->
     <header class="admin-topbar">
         <div class="topbar-left">
-            <span class="topbar-brand">PRIMMBOT</span>
+            <span class="topbar-brand"><img src="/assets/images/logo.png" alt="PRIMMBOT">PRIMMBOT</span>
             <span class="topbar-badge">Admin Panel</span>
             <span class="topbar-page">{{ $title ?? 'Dashboard' }}</span>
         </div>

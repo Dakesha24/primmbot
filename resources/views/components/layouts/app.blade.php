@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'PRIMMBOT' }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
@@ -84,6 +85,9 @@
         }
 
         .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 800;
             font-size: 1.25rem;
             color: #fff;
@@ -91,8 +95,18 @@
             letter-spacing: -0.5px;
         }
 
-        .nav-logo span {
+        .nav-logo .nav-brand {
+            color: #fff;
+        }
+
+        .nav-logo .nav-brand span {
             color: var(--cyan-400);
+        }
+
+        .nav-logo img {
+            height: 30px;
+            width: auto;
+            object-fit: contain;
         }
 
         .nav-menu {
@@ -443,7 +457,7 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-left">
-            <a href="{{ route('dashboard') }}" class="nav-logo">PRIMM<span>BOT</span></a>
+            <a href="{{ route('dashboard') }}" class="nav-logo"><img src="/assets/images/logo.png" alt="PRIMMBOT"><span class="nav-brand">PRIMM<span>BOT</span></span></a>
             <div class="nav-menu">
                 <a href="{{ route('dashboard') }}"
                     class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>

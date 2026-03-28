@@ -64,10 +64,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // API
         Route::post('/api/sql/run', [\App\Http\Controllers\Api\SqlRunnerController::class, 'run'])->name('api.sql.run');
         Route::get('/api/sql/tables', [\App\Http\Controllers\Api\SqlRunnerController::class, 'tables'])->name('api.sql.tables');
-        Route::post('/api/submission/check', [\App\Http\Controllers\Api\SubmissionController::class, 'check'])->name('api.submission.check');
         Route::post('/api/submission/submit', [\App\Http\Controllers\Api\SubmissionController::class, 'submit'])->name('api.submission.submit');
         Route::post('/api/submission/progress', [\App\Http\Controllers\Api\SubmissionController::class, 'checkProgress'])->name('api.submission.progress');
-        Route::post('/api/chat', [\App\Http\Controllers\Api\SubmissionController::class, 'chat'])->name('api.chat');
+        Route::post('/api/chat', [\App\Http\Controllers\Api\ChatController::class, 'chat'])->name('api.chat');
     });
 });
 
@@ -115,6 +114,13 @@ Route::prefix('admin')
         Route::get('/hasil-kelas', [\App\Http\Controllers\Admin\HasilKelasController::class, 'index'])->name('hasil-kelas.index');
         Route::get('/hasil-kelas/{course}', [\App\Http\Controllers\Admin\HasilKelasController::class, 'show'])->name('hasil-kelas.show');
         Route::get('/hasil-kelas/{course}/siswa/{student}', [\App\Http\Controllers\Admin\HasilKelasController::class, 'student'])->name('hasil-kelas.student');
+        Route::get('/hasil-kelas/{course}/siswa/{student}/pdf', [\App\Http\Controllers\Admin\HasilKelasController::class, 'downloadPdf'])->name('hasil-kelas.student.pdf');
+        Route::get('/hasil-kelas/{course}/siswa/{student}/excel', [\App\Http\Controllers\Admin\HasilKelasController::class, 'downloadExcel'])->name('hasil-kelas.student.excel');
+        Route::get('/hasil-kelas/{course}/siswa/{student}/chat', [\App\Http\Controllers\Admin\HasilKelasController::class, 'downloadChat'])->name('hasil-kelas.student.chat');
+
+        // Teacher Reviews
+        Route::post('/reviews/{submission}', [\App\Http\Controllers\Admin\TeacherReviewController::class, 'store'])->name('reviews.store');
+        Route::put('/reviews/{review}', [\App\Http\Controllers\Admin\TeacherReviewController::class, 'update'])->name('reviews.update');
 
         // Sekolah
         Route::get('/schools', [AdminSchoolController::class, 'index'])->name('schools.index');

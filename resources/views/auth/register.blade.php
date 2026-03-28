@@ -37,9 +37,14 @@
 
         <div class="form-group">
             <label class="form-label" for="password">Password</label>
-            <input class="form-input" id="password" type="password" name="password"
-                required autocomplete="new-password"
-                placeholder="Minimal 8 karakter">
+            <div class="pw-wrap">
+                <input class="form-input" id="password" type="password" name="password"
+                    required autocomplete="new-password"
+                    placeholder="Minimal 8 karakter">
+                <button type="button" class="pw-toggle" onclick="togglePw('password', this)" tabindex="-1">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
             @error('password')
                 <p class="form-error">{{ $message }}</p>
             @enderror
@@ -47,9 +52,14 @@
 
         <div class="form-group">
             <label class="form-label" for="password_confirmation">Konfirmasi Password</label>
-            <input class="form-input" id="password_confirmation" type="password"
-                name="password_confirmation" required autocomplete="new-password"
-                placeholder="Ulangi password">
+            <div class="pw-wrap">
+                <input class="form-input" id="password_confirmation" type="password"
+                    name="password_confirmation" required autocomplete="new-password"
+                    placeholder="Ulangi password">
+                <button type="button" class="pw-toggle" onclick="togglePw('password_confirmation', this)" tabindex="-1">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Daftar</button>

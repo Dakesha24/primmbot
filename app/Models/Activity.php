@@ -20,6 +20,7 @@ class Activity extends Model
         'editor_default_code',
         'reference_sql',
         'expected_output',
+        'kkm',
         'order',
     ];
 

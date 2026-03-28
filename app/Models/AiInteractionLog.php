@@ -12,6 +12,7 @@ class AiInteractionLog extends Model
     protected $fillable = [
         'user_id',
         'activity_id',
+        'type',
         'prompt_sent',
         'response_received',
         'tokens_used',

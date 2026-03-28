@@ -71,7 +71,7 @@
                 <li>Perhatikan kode SQL yang ditampilkan — <strong style="color:#cbd5e1;">jangan dijalankan dulu</strong></li>
                 <li>Bayangkan dan prediksi apa output yang akan dihasilkan</li>
                 <li>Tulis prediksimu di kolom jawaban</li>
-                <li>Klik <strong style="color:#cbd5e1;">Cek</strong> untuk mendapat umpan balik, lalu <strong style="color:#cbd5e1;">Submit</strong></li>
+                <li>Tulis jawabanmu, lalu klik <strong style="color:#cbd5e1;">Submit</strong> untuk mendapat umpan balik dari AI</li>
             </ul>
         </div>
     </div>
@@ -196,18 +196,23 @@
                     placeholder="Tulis jawabanmu di sini...">{{ $submission->answer_text ?? '' }}</textarea>
 
                 <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1rem;">
-                    <button id="btn-cek"
-                        style="padding:0.6rem 1.2rem;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#cbd5e1;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;"
-                        onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.25)'"
-                        onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.12)'">
-                        Cek
-                    </button>
-                    <button id="btn-submit" {{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? '' : 'disabled' }}>Submit</button>
+                    <div id="score-display" style="flex:1;font-size:0.82rem;line-height:1.5;"></div>
+                    <button id="btn-submit">Submit</button>
                 </div>
-                <p id="submit-hint" style="font-size:0.75rem;color:#64748b;margin-top:0.5rem;display:{{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? 'none' : 'block' }};">
-                    Klik <strong style="color:#94a3b8;">Cek</strong> terlebih dahulu sebelum submit.
-                </p>
             </div>
+
+            {{-- Feedback Guru --}}
+            @if ($teacherReview)
+            <div style="margin-bottom:1rem; border-radius:12px; border:1px solid rgba(251,191,36,0.25); background:rgba(251,191,36,0.05); padding:1rem 1.1rem;">
+                <div style="font-size:10px; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">Feedback Guru</div>
+                @if ($teacherReview->score !== null)
+                    <div style="margin-bottom:0.4rem;"><span style="font-size:12px; font-weight:700; color:#fbbf24; background:rgba(251,191,36,0.1); padding:2px 8px; border-radius:4px;">Skor Koreksi: {{ $teacherReview->score }}/100</span></div>
+                @endif
+                @if ($teacherReview->feedback)
+                    <div style="font-size:13px; color:#e2e8f0; line-height:1.55; white-space:pre-wrap;">{{ $teacherReview->feedback }}</div>
+                @endif
+            </div>
+            @endif
 
             {{-- Virtual Assistant --}}
             <div class="chat-widget" style="margin-top:1.2rem;">
@@ -223,7 +228,7 @@
                     </div>
                 </div>
                 <div id="chat-messages" class="chat-body">
-                    @if ($chatLogs->isEmpty())
+                    @if ($chatLogs->isEmpty() && !($submission && $submission->ai_feedback))
                     <div class="chat-row">
                         <div class="chat-avatar-small"><svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg></div>
                         <div class="chat-bubble bot-bubble">Halo! Saya PRIMM Bot 👋 Di tahap Predict, coba perhatikan query yang diberikan — tabel apa saja yang terlibat? Kalau ada yang ingin ditanyakan, langsung ketik di sini ya!</div>
@@ -238,6 +243,16 @@
                         <div class="chat-bubble bot-bubble">{{ $log->response_received }}</div>
                     </div>
                     @endforeach
+                    @if ($submission && $submission->ai_feedback)
+                    <div class="chat-row user-row">
+                        <div class="chat-bubble user-bubble" style="white-space:pre-wrap;">Submit jawaban:
+{{ $submission->answer_text }}</div>
+                    </div>
+                    <div class="chat-row">
+                        <div class="chat-avatar-small"><svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.7-1.388 2.7H4.186c-1.418 0-2.389-1.7-1.388-2.7L4.2 15.3"/></svg></div>
+                        <div class="chat-bubble bot-bubble">{{ $submission->ai_feedback }}<br><small style="opacity:0.65;font-size:11px;">Keruntutan: {{ $submission->score_keruntutan }} | Argumen: {{ $submission->score_berargumen }} | Kesimpulan: {{ $submission->score_kesimpulan }} → Total: {{ $submission->score }}/100</small></div>
+                    </div>
+                    @endif
                     @endif
                 </div>
                 <div class="chat-footer">
@@ -601,55 +616,16 @@
                     el.innerHTML = '<span style="color:#f87171">Gagal memuat ERD</span>';
                 }
             }
-            const answerText = document.getElementById('answer-text');
-            const btnCek = document.getElementById('btn-cek');
-            const btnSubmit = document.getElementById('btn-submit');
-            const submitHint = document.getElementById('submit-hint');
-            let submitUnlocked = {{ ($submission && ($submission->is_correct || $submission->ai_feedback !== null)) ? 'true' : 'false' }};
+            const answerText   = document.getElementById('answer-text');
+            const btnSubmit    = document.getElementById('btn-submit');
+            const scoreDisplay = document.getElementById('score-display');
 
-            function setSubmitLocked(locked) {
-                btnSubmit.disabled = locked;
-                if (submitHint) submitHint.style.display = locked ? 'block' : 'none';
-            }
-            setSubmitLocked(!submitUnlocked);
-
-            if (btnCek) {
-                btnCek.addEventListener('click', async function() {
-                    const text = answerText.value.trim();
-                    if (!text) {
-                        addChatMessage('assistant', '⚠️ Tulis jawabanmu terlebih dahulu.');
-                        return;
-                    }
-                    addChatMessage('user', 'Cek jawaban:\n' + text);
-                    showTyping();
-                    btnCek.disabled = true;
-                    btnCek.textContent = 'Memeriksa...';
-                    try {
-                        const res = await fetch('{{ route('api.submission.check') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                activity_id: activityId,
-                                answer_text: text
-                            }),
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            addChatMessage('assistant', data.feedback);
-                            if (!submitUnlocked) { submitUnlocked = true; setSubmitLocked(false); }
-                        } else {
-                            addChatMessage('assistant', '❌ ' + (data.error || 'Terjadi kesalahan.'));
-                        }
-                    } catch (e) {
-                        addChatMessage('assistant', '❌ Terjadi kesalahan koneksi.');
-                    }
-                    btnCek.disabled = false;
-                    btnCek.textContent = 'Cek';
-                });
+            function updateScoreDisplay(score, isCorrect, detail) {
+                if (!scoreDisplay) return;
+                const color = isCorrect ? '#4ade80' : '#f87171';
+                const label = isCorrect ? '✅ Lulus!' : '❌ Coba lagi';
+                const sub   = detail ? `Keruntutan: ${detail.keruntutan} | Argumen: ${detail.berargumen} | Kesimpulan: ${detail.kesimpulan}` : '';
+                scoreDisplay.innerHTML = `<span style="color:${color};font-weight:600;">Skor: ${score}/100 ${label}</span>${sub ? `<br><small style="color:#94a3b8;font-size:11px;">${sub}</small>` : ''}`;
             }
 
             if (btnSubmit) {
@@ -679,14 +655,18 @@
                         });
                         const data = await res.json();
                         if (data.success) {
+                            updateScoreDisplay(data.score, data.is_correct, data.score_detail);
+                            const scoreInfo = data.score_detail
+                                ? ` (Keruntutan: ${data.score_detail.keruntutan}, Argumen: ${data.score_detail.berargumen}, Kesimpulan: ${data.score_detail.kesimpulan} → Total: ${data.score}/100)`
+                                : ` (Skor: ${data.score}/100)`;
                             if (data.is_correct) {
-                                addChatMessage('assistant', '✅ ' + data.feedback + ' (Skor: ' + data.score + '/100)');
+                                addChatMessage('assistant', '✅ ' + data.feedback + scoreInfo);
                                 btnSubmit.classList.add('btn-done');
                                 btnSubmit.style.removeProperty('background');
                                 btnSubmit.textContent = 'Selesai ✓';
                                 btnSubmit.disabled = true;
                             } else {
-                                addChatMessage('assistant', '⚠️ ' + data.feedback + ' (Skor: ' + data.score + '/100). Perbaiki jawabanmu.');
+                                addChatMessage('assistant', data.feedback + scoreInfo + ' Perbaiki jawabanmu dan coba lagi.');
                                 btnSubmit.disabled = false;
                                 btnSubmit.textContent = 'Submit';
                             }
@@ -743,7 +723,6 @@
             }
 
             // Virtual Assistant Chat
-            let chatHistory = @json($chatHistory);
             const btnChat   = document.getElementById('btn-chat');
             const chatInput = document.getElementById('chat-input');
 
@@ -753,19 +732,17 @@
                     if (!msg) return;
                     addChatMessage('user', msg);
                     chatInput.value = '';
-                    chatHistory.push({ role: 'user', message: msg });
                     btnChat.disabled = true;
                     showTyping();
                     try {
                         const res = await fetch('{{ route('api.chat') }}', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                            body: JSON.stringify({ activity_id: activityId, message: msg, history: chatHistory.slice(-6) }),
+                            body: JSON.stringify({ activity_id: activityId, message: msg }),
                         });
                         const data = await res.json();
                         const reply = data.success ? data.response : 'Maaf, terjadi kesalahan. Coba lagi.';
                         addChatMessage('assistant', reply);
-                        if (data.success) chatHistory.push({ role: 'assistant', message: reply });
                     } catch (e) {
                         addChatMessage('assistant', 'Maaf, tidak dapat terhubung ke asisten.');
                     }
@@ -775,11 +752,14 @@
                 chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
             }
 
-            @if ($submission && $submission->is_correct)
+            @if ($submission && $submission->score !== null)
+                updateScoreDisplay({{ $submission->score }}, {{ $submission->is_correct ? 'true' : 'false' }}, @json(['keruntutan' => $submission->score_keruntutan, 'berargumen' => $submission->score_berargumen, 'kesimpulan' => $submission->score_kesimpulan]));
+                @if ($submission->is_correct)
                 btnSubmit.classList.add('btn-done');
                 btnSubmit.style.removeProperty('background');
                 btnSubmit.textContent = 'Selesai ✓';
                 btnSubmit.disabled = true;
+                @endif
             @endif
 
             // Scroll chat ke bawah saat load

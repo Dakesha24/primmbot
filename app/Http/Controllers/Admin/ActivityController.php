@@ -39,9 +39,11 @@ class ActivityController extends Controller
             'expected_output'    => 'nullable|json',
             'level'              => 'nullable|string',
             'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
+            'kkm'                => 'nullable|integer|min:0|max:100',
         ];
 
         $validated = $request->validate($rules);
+        $validated['kkm'] = $validated['kkm'] ?? 70;
 
         // Auto-assign level untuk modify/make: Level 1, 2, 3, dst
         if (in_array($validated['stage'], ['modify', 'make'])) {
@@ -86,9 +88,11 @@ class ActivityController extends Controller
             'expected_output'    => 'nullable|json',
             'level'              => 'nullable|string',
             'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
+            'kkm'                => 'nullable|integer|min:0|max:100',
         ];
 
         $validated = $request->validate($rules);
+        $validated['kkm'] = $validated['kkm'] ?? 70;
 
         $activity->update($validated);
 

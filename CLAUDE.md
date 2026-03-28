@@ -4,9 +4,11 @@
 
 - **Nama:** PRIMMBOT
 - **Tujuan:** Platform e-LKPD (Lembar Kerja Peserta Didik digital) untuk meningkatkan *Logical Thinking* siswa SMK pada materi Basis Data (SQL Join & DCL)
-- **Model Pembelajaran:** PRIMM — Predict, Run, Investigate, Modified, Make
-- **Konsep AI:** Virtual Assistant berperan sebagai MKO (*More Knowledgeable Other*) menggunakan strategi Scaffolding & Fading
+- **Model Pembelajaran:** PRIMM — Predict, Run, Investigate, Modify, Make
+- **Konsep AI:** Virtual Assistant berperan sebagai MKO (*More Knowledgeable Other*) menggunakan strategi **Scaffolding** (membimbing lewat pertanyaan pemantik, tidak pernah memberi jawaban langsung)
+- **Catatan penting:** Scaffolding & Fading ditangani oleh **struktur tahapan PRIMM** itu sendiri (Predict → Run → Investigate → Modify → Make). AI assistant bukan mekanisme fading — tugasnya murni membimbing siswa dalam satu tahap yang sedang dikerjakan
 - **Target Pengguna:** Siswa SMKN 4 Bandung, kelas XI PPLG 1/2/3
+- **Indikator Logical Thinking yang diukur:** Keruntutan Berpikir, Kemampuan Berargumen, Penarikan Kesimpulan
 
 ---
 
@@ -58,10 +60,11 @@
 `id` | `chapter_id` FK | `type` enum(pendahuluan, petunjuk_belajar, tujuan, prasyarat, ringkasan_materi) | `content` longText HTML | `order` | timestamps
 
 ### `activities`
-`id` | `chapter_id` FK | `sandbox_database_id` FK nullable | `description` longText nullable | `stage` enum(predict, run, investigate, modified, make) | `level` enum(atoms, blocks, relations, macro, mudah, sedang, tantang) nullable | `question_text` text | `code_snippet` text nullable | `editor_default_code` text nullable | `expected_output` JSON nullable | `order` | timestamps
+`id` | `chapter_id` FK | `sandbox_database_id` FK nullable | `description` longText nullable | `stage` enum(predict, run, investigate, modify, make) | `level` enum(atoms, blocks, relations, macro, mudah, sedang, tantang) nullable | `question_text` text | `code_snippet` text nullable | `editor_default_code` text nullable | `expected_output` JSON nullable | `kkm` integer default 70 | `order` | timestamps
 
 - Cast: `expected_output` → array
 - Relasi: `sandboxDatabase()` belongsTo
+- `kkm` = nilai minimum untuk dinyatakan lulus per aktivitas (default 70, dapat diatur guru dari admin)
 
 **Penggunaan field per stage:**
 
@@ -76,13 +79,25 @@
 | `level` | — | — | atoms/blocks/relations/macro | mudah/sedang/tantang | mudah/sedang/tantang |
 
 ### `submissions`
-`id` | `user_id` FK | `activity_id` FK | `answer_text` nullable | `answer_code` nullable | `is_correct` boolean | `score` integer nullable | `ai_feedback` text nullable | timestamps
+`id` | `user_id` FK | `activity_id` FK | `answer_text` nullable | `answer_code` nullable | `is_correct` boolean | `score` integer nullable | `score_keruntutan` integer nullable | `score_berargumen` integer nullable | `score_kesimpulan` integer nullable | `attempt` integer default 1 | `ai_feedback` text nullable | timestamps
+
+- **Tidak ada unique constraint** pada pasangan `user_id` + `activity_id` — siswa boleh submit berkali-kali hingga memenuhi KKM
+- `attempt` = urutan percobaan ke-berapa (auto-increment per siswa per aktivitas)
+- `score` = skor total (dihitung oleh PHP dari rata-rata tiga indikator, bukan dari AI)
+- `score_keruntutan`, `score_berargumen`, `score_kesimpulan` = skor per indikator logical thinking (0–100), digunakan untuk analisis data penelitian
+- `is_correct` = true jika `score >= activity.kkm`
+- Query "submission terakhir": `->where(user_id, activity_id)->orderBy('attempt','desc')->first()`
 
 ### `material_completions`
 `id` | `user_id` FK | `lesson_material_id` FK | timestamps | UNIQUE pair
 
 ### `ai_interaction_logs`
-`id` | `user_id` FK | `activity_id` FK | `prompt_sent` | `response_received` | `tokens_used` nullable | `response_time` decimal nullable | timestamps
+`id` | `user_id` FK | `activity_id` FK | `type` enum(chat, submit) default chat | `prompt_sent` | `response_received` | `tokens_used` nullable | `response_time` decimal nullable | timestamps
+
+- `type = 'chat'` → interaksi percakapan bebas siswa dengan VA
+- `type = 'submit'` → interaksi evaluasi saat siswa klik Submit
+- Riwayat percakapan chat direkonstruksi dari tabel ini (filter `type = 'chat'`, urut `created_at`)
+- Pemisahan type penting agar log submit tidak ikut masuk sebagai history percakapan
 
 ### `teacher_reviews`
 `id` | `submission_id` FK | `teacher_id` FK | `score` nullable | `feedback` nullable | timestamps
@@ -148,7 +163,8 @@ primmbot/
 │   │   │   │   └── RegisteredUserController.php
 │   │   │   ├── Api/
 │   │   │   │   ├── SqlRunnerController.php       ← eksekusi query ke sandbox
-│   │   │   │   └── SubmissionController.php      ← cek & submit jawaban (AI)
+│   │   │   │   ├── SubmissionController.php      ← submit jawaban final
+│   │   │   │   └── ChatController.php            ← chat dengan virtual assistant
 │   │   │   ├── Admin/
 │   │   │   │   ├── DashboardController.php
 │   │   │   │   ├── CourseController.php
@@ -168,12 +184,41 @@ primmbot/
 │   │   │   ├── EnsureProfileComplete.php
 │   │   │   └── RoleMiddleware.php
 │   │   └── Requests/Auth/LoginRequest.php
-│   └── Models/
-│       ├── User.php / Profile.php
-│       ├── Course.php / Chapter.php / LessonMaterial.php
-│       ├── Activity.php / Submission.php / MaterialCompletion.php
-│       ├── AiInteractionLog.php / TeacherReview.php
-│       └── SandboxDatabase.php / SandboxTable.php
+│   ├── Models/
+│   │   ├── User.php / Profile.php
+│   │   ├── Course.php / Chapter.php / LessonMaterial.php
+│   │   ├── Activity.php / Submission.php / MaterialCompletion.php
+│   │   ├── AiInteractionLog.php / TeacherReview.php
+│   │   └── SandboxDatabase.php / SandboxTable.php
+│   └── Services/
+│       └── AI/
+│           ├── AIService.php                    ← satu-satunya pintu masuk dari controller
+│           ├── GroqClient.php                   ← HTTP layer saja (kirim prompt → terima teks)
+│           ├── ContextLoader.php                ← ambil ringkasan materi + struktur tabel sandbox
+│           ├── ResponseParser.php               ← parse JSON dari AI → EvaluationResult
+│           ├── EvaluationResult.php             ← value object: keruntutan, berargumen,
+│           │                                       kesimpulan, total, isCorrect, feedback
+│           ├── Prompts/
+│           │   ├── SystemPrompt.php             ← identitas & aturan PRIMM Bot (1 tempat)
+│           │   ├── ChatPrompt.php               ← bangun prompt chat untuk semua stage
+│           │   └── Stages/
+│           │       ├── PredictPrompt.php        ← rubrik + prompt evaluasi khusus Predict
+│           │       ├── RunPrompt.php            ← rubrik + prompt evaluasi khusus Run
+│           │       │                               (inject jawaban Predict sebelumnya)
+│           │       ├── InvestigatePrompt.php    ← rubrik + prompt per level (atoms/blocks/
+│           │       │                               relations/macro)
+│           │       ├── ModifyPrompt.php         ← rubrik + prompt evaluasi khusus Modify
+│           │       │                               (inject editor_default_code)
+│           │       └── MakePrompt.php           ← rubrik + prompt evaluasi khusus Make
+│           └── Evaluators/
+│               ├── NarrativeEvaluator.php       ← evaluasi jawaban teks (Predict, Run,
+│               │                                   Investigate) → panggil GroqClient
+│               └── SqlEvaluator.php             ← jalankan SQL siswa ke sandbox,
+│                                                   bandingkan output → panggil GroqClient
+│
+├── docs/
+│   ├── virtual-assistant.md           ← dokumentasi lengkap sistem AI
+│   └── fitur-download-hasil-belajar.md
 │
 ├── resources/views/
 │   ├── components/layouts/
@@ -197,7 +242,7 @@ primmbot/
 │   │       ├── predict.blade.php
 │   │       ├── run.blade.php
 │   │       ├── investigate.blade.php
-│   │       ├── modified.blade.php
+│   │       ├── modify.blade.php
 │   │       └── make.blade.php
 │   └── admin/
 │       ├── dashboard.blade.php
@@ -215,9 +260,11 @@ primmbot/
 |---|---|---|
 | `learning.activity` | `/belajar/{chapter}/aktivitas/{activity}` | Halaman tahap PRIMM |
 | `api.sql.run` | `POST /api/sql/run` | Jalankan query ke sandbox |
-| `api.submission.check` | `POST /api/submission/check` | Cek jawaban (AI feedback) |
-| `api.submission.submit` | `POST /api/submission/submit` | Submit jawaban final |
+| `api.submission.submit` | `POST /api/submission/submit` | Submit jawaban → evaluasi + skor |
+| `api.chat` | `POST /api/chat` | Chat dengan Virtual Assistant |
 | `admin.*` | `/admin/...` | Manajemen konten & sandbox |
+
+> **Catatan:** Route `api.submission.check` (tombol CEK) dihapus. Tidak ada lagi tombol CEK — siswa langsung chat dengan AI jika butuh bantuan, lalu Submit jika sudah yakin.
 
 ---
 
@@ -230,5 +277,65 @@ primmbot/
 - Panel Database (tabel + ERD Mermaid) tampil di kolom kiri **semua tahap PRIMM**
 - `$sandboxTables` dikirim dari `LearningController` ke semua view — berisi struktur kolom
 - ERD dirender client-side dengan **Mermaid.js v10**, dinamis dari `$sandboxTables`
-- Scaffolding & Fading: bantuan AI berkurang seiring kemajuan siswa (konsep pedagogis inti)
-- LLM saat ini menggunakan **Gemini 1.5 Flash** (belum diimplementasi penuh)
+- **Tidak ada tombol CEK** — siswa hanya punya dua aksi: Chat (tanya AI) dan Submit (kumpulkan jawaban)
+- **Submit bisa berkali-kali** hingga skor ≥ KKM — setiap submit disimpan sebagai record baru di `submissions`
+- **Feedback submit bersifat scaffolding** (pertanyaan pemantik), bukan evaluatif — ditampilkan di chat widget
+- **Skor dihitung oleh PHP**, bukan AI — AI hanya memberi skor per indikator (0–100), PHP menghitung rata-rata
+- **Rubrik logical thinking ada di kode** (per file stage prompt), bukan di DB — ini konstanta penelitian
+- **LLM:** Groq API (model dikonfigurasi via `.env`) — lihat `docs/virtual-assistant.md` untuk detail lengkap
+
+---
+
+## 9. Backlog / TODO
+
+### `reference_answer` — Acuan Kualitas Berpikir untuk Evaluasi AI
+
+**Latar belakang:**
+Saat ini AI menilai jawaban siswa berdasarkan rubrik logical thinking saja (keruntutan, berargumen, kesimpulan). Tanpa contoh jawaban ideal, AI tidak tahu apakah *argumen* siswa logis untuk soal spesifik itu — hanya tahu apakah *struktur* argumen ada atau tidak.
+
+Contoh masalah: siswa menjawab urut + ada argumen + ada kesimpulan, tapi mengabaikan konsep JOIN sepenuhnya → AI memberi skor tinggi karena struktur terpenuhi, padahal konten keliru.
+
+**Solusi: tambah field `reference_answer` (text, nullable) di tabel `activities`**
+
+Bukan kunci jawaban, tapi **contoh jawaban ideal** yang ditulis guru — menunjukkan kualitas reasoning yang diharapkan per indikator untuk soal itu. AI menggunakannya sebagai acuan kalibrasi, bukan cek kecocokan kata.
+
+Berlaku untuk semua 5 stage:
+- predict/run/investigate → acuan untuk jawaban teks utama
+- modify/make → acuan untuk bagian penjelasan teks (`answer_text`)
+
+**Yang perlu dikerjakan:**
+1. Migration: `add_reference_answer_to_activities_table` — kolom `reference_answer` text nullable
+2. `Activity` model: tambah ke `$fillable`
+3. `ActivityController`: tambah validasi `'reference_answer' => 'nullable|string'` di `store()` dan `update()`
+4. 10 admin form (create/edit semua stage): tambah textarea `reference_answer` dengan label "Contoh Jawaban Ideal (Acuan AI)"
+5. 5 file Prompt (`PredictPrompt`, `RunPrompt`, `InvestigatePrompt`, `ModifyPrompt`, `MakePrompt`): inject `$activity->reference_answer` ke prompt jika tidak null — contoh: `"Contoh jawaban ideal (gunakan sebagai acuan kualitas berpikir, bukan kunci jawaban):\n{$ref}\n"`
+
+---
+
+### Teacher Review — Feedback & Koreksi Skor oleh Guru
+
+**Latar belakang:**
+Sebagai fallback jika AI error atau skor tidak masuk akal. Guru berhak mengoreksi skor AI dan memberikan feedback manual. Tabel `teacher_reviews` sudah ada di DB.
+
+**Keputusan desain:**
+- Feedback guru **opsional** (tidak wajib) — feedback AI tetap yang wajib
+- Guru hanya mereview **submission terakhir** per siswa per aktivitas
+- Skor guru **menggantikan (override)** skor AI, bukan dirata-rata
+- Saat guru simpan review → `submissions.score` dan `submissions.is_correct` langsung diupdate
+- Siswa melihat feedback guru dengan **manual refresh** (bukan polling) — sesuai skenario kelas tatap muka
+- Feedback guru tampil sebagai **blok terpisah** di halaman aktivitas (bukan di chat widget)
+- Jika belum ada review guru → blok tidak muncul sama sekali di sisi siswa
+
+**Skema skor:**
+```
+Skor final = teacher_reviews.score ?? submissions.score (AI)
+is_correct = (skor_final >= activity.kkm)
+```
+
+**Yang perlu dikerjakan:**
+1. **Admin — halaman baru**: `admin.submissions.index` per aktivitas → tabel daftar siswa + skor AI + status review
+2. **Admin — form review**: tampil jawaban siswa (read-only) + skor AI + feedback AI → input skor guru + textarea feedback → simpan ke `teacher_reviews`
+3. **`TeacherReviewController`** (baru): `store()` / `update()` → simpan ke `teacher_reviews` + update `submissions.score` dan `submissions.is_correct`
+4. **Route**: `admin.activities.submissions` (index) + `admin.submissions.review` (store/update)
+5. **Sisi siswa**: tambah blok "Feedback Guru" di semua 5 stage view — tampil hanya jika `$teacherReview` tidak null, posisi di atas chat widget
+6. **`LearningController`**: load `teacherReview` dari `teacher_reviews` join `submissions` terbaru → kirim ke view

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ChatSiswaExport;
+use App\Exports\HasilSiswaExport;
 use App\Http\Controllers\Controller;
 use App\Models\AiInteractionLog;
 use App\Models\Course;
 use App\Models\Kelas;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class HasilKelasController extends Controller
 {
@@ -150,8 +154,10 @@ class HasilKelasController extends Controller
         // Semua submission siswa untuk course ini
         $submissions = $student->submissions()
             ->whereIn('activity_id', $activityIds)
-            ->orderBy('updated_at', 'desc')
+            ->with('teacherReview')
+            ->orderBy('attempt', 'desc')
             ->get()
+            ->unique('activity_id')   // ambil attempt tertinggi per activity
             ->keyBy('activity_id');
 
         // Semua AI interaction logs siswa untuk course ini
@@ -180,5 +186,117 @@ class HasilKelasController extends Controller
         });
 
         return view('admin.hasil-kelas.student', compact('course', 'student'));
+    }
+
+    // ── Download PDF hasil siswa ──────────────────────────────────────────────
+    public function downloadPdf(Course $course, User $student)
+    {
+        [$submissions, , $stats] = $this->prepareDownloadData($course, $student);
+        $identity = $this->buildIdentity($course, $student, $submissions);
+
+        $pdf = Pdf::loadView('pdf.hasil-siswa-guru', compact('course', 'student', 'submissions', 'stats', 'identity'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download($this->buildFilename($course, $student, 'pdf'));
+    }
+
+    // ── Download Excel hasil siswa ────────────────────────────────────────────
+    public function downloadExcel(Course $course, User $student)
+    {
+        [$submissions, , $stats] = $this->prepareDownloadData($course, $student);
+        $identity = $this->buildIdentity($course, $student, $submissions);
+
+        return Excel::download(
+            new HasilSiswaExport($course, $submissions, $identity),
+            $this->buildFilename($course, $student, 'xlsx')
+        );
+    }
+
+    // ── Download Excel riwayat chat siswa ────────────────────────────────────
+    public function downloadChat(Course $course, User $student)
+    {
+        [, $chatLogs] = $this->prepareDownloadData($course, $student);
+        $identity = $this->buildIdentity($course, $student, collect());
+
+        return Excel::download(
+            new ChatSiswaExport($course, $chatLogs, $identity),
+            $this->buildFilename($course, $student, 'xlsx', 'chat')
+        );
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private function prepareDownloadData(Course $course, User $student): array
+    {
+        $course->load(['chapters' => function ($q) {
+            $q->orderBy('order')->with(['activities' => fn($q) => $q->orderBy('order')]);
+        }]);
+
+        $activityIds = $course->chapters->flatMap(fn($ch) => $ch->activities->pluck('id'));
+
+        $submissions = $student->submissions()
+            ->whereIn('activity_id', $activityIds)
+            ->with('teacherReview')
+            ->orderBy('attempt', 'desc')
+            ->get()
+            ->unique('activity_id')
+            ->keyBy('activity_id');
+
+        $chatLogs = AiInteractionLog::where('user_id', $student->id)
+            ->whereIn('activity_id', $activityIds)
+            ->where('type', 'chat')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('activity_id');
+
+        // Inject ke activities (untuk PDF view)
+        $course->chapters->each(function ($chapter) use ($submissions) {
+            $chapter->activities->each(function ($activity) use ($submissions) {
+                $activity->student_submission = $submissions->get($activity->id);
+            });
+        });
+
+        $allActivities = $course->chapters->flatMap(fn($ch) => $ch->activities);
+        $total         = $allActivities->count();
+        $correctIds    = $submissions->where('is_correct', true)->pluck('activity_id')->unique();
+        $completed     = $correctIds->count();
+
+        $stats = [
+            'total'     => $total,
+            'completed' => $completed,
+            'percent'   => $total > 0 ? round($completed / $total * 100) : 0,
+            'avg_score' => $submissions->whereNotNull('score')->isNotEmpty()
+                ? round($submissions->whereNotNull('score')->avg('score'))
+                : null,
+        ];
+
+        return [$submissions, $chatLogs, $stats];
+    }
+
+    private function buildIdentity(Course $course, User $student, $submissions): array
+    {
+        $profile = $student->profile()->with('kelas')->first();
+
+        return [
+            'nama'         => $profile?->full_name ?? $student->username,
+            'nis'          => $profile?->nim ?? '-',
+            'kelas'        => $profile?->kelas?->name ?? '-',
+            'sekolah'      => 'SMKN 4 Bandung',
+            'tgl_cetak'    => now()->format('d M Y, H:i'),
+            'tgl_terakhir' => $submissions->isNotEmpty()
+                ? $submissions->max(fn($s) => $s->updated_at)?->format('d M Y, H:i')
+                : '-',
+        ];
+    }
+
+    private function buildFilename(Course $course, User $student, string $ext, string $prefix = 'hasil'): string
+    {
+        $profile = $student->profile()->with('kelas')->first();
+
+        $nis    = str($profile?->nim ?? 'nonim')->slug();
+        $nama   = str($profile?->full_name ?? $student->username)->slug();
+        $kelas  = str($profile?->kelas?->name ?? 'umum')->slug();
+        $materi = str($course->title)->slug();
+
+        return "{$prefix}_{$nis}_{$nama}_{$kelas}_{$materi}.{$ext}";
     }
 }

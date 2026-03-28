@@ -252,6 +252,13 @@
 
                 <hr class="section-divider">
 
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:600;color:#1a2332;">KKM (Nilai Minimum Lulus)</label>
+                    <input type="number" name="kkm" value="{{ old('kkm', 70) }}" min="0" max="100"
+                        style="width:120px;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:5px;font-size:13px;font-family:inherit;">
+                    <div class="field-hint" style="margin-top:4px;">Skor minimum (0–100) agar siswa dinyatakan lulus. Default: 70</div>
+                </div>
+
                 <div class="form-actions">
                     <a href="{{ route('admin.chapters.content', [$course, $chapter]) }}"
                         class="btn-secondary" style="text-decoration:none;">Batal</a>

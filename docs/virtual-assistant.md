@@ -1,10 +1,32 @@
-# Dokumentasi Asisten Virtual PRIMM Bot
+# Dokumentasi Virtual Assistant — PRIMM Bot
 
 ## 1. Gambaran Umum
 
-PRIMM Bot adalah asisten virtual berbasis AI yang berperan sebagai **MKO (More Knowledgeable Other)** dalam platform e-LKPD PRIMMBOT. Asisten ini dirancang khusus untuk membantu siswa SMK kelas XI PPLG belajar SQL JOIN dan DCL melalui pendekatan pedagogis **Scaffolding dan Fading**.
+PRIMM Bot adalah asisten virtual berbasis AI yang berperan sebagai **MKO (More Knowledgeable Other)** dalam platform e-LKPD PRIMMBOT. Bot ini dirancang untuk membantu siswa SMK kelas XI PPLG belajar SQL JOIN melalui pendekatan **Scaffolding** — membimbing siswa berpikir sendiri lewat pertanyaan pemantik, tidak pernah memberi jawaban langsung.
 
-**Filosofi utama:** PRIMM Bot **tidak pernah memberikan jawaban langsung**. Sebaliknya, bot membimbing siswa untuk berpikir sendiri melalui pertanyaan pemantik yang membangun *Logical Thinking* secara bertahap (Bloom's Taxonomy: ingat → pahami → terapkan → analisis).
+### Prinsip Utama
+
+**Scaffolding ada di dua lapisan yang berbeda:**
+
+1. **Lapisan PRIMM (struktural)** — Fading terjadi secara alami melalui urutan tahapan:
+   - Predict → siswa dibantu sepenuhnya dengan kode yang sudah ada
+   - Run → siswa menjalankan kode, lalu merefleksikan
+   - Investigate → siswa menganalisis tanpa diberi tahu
+   - Modify → siswa memodifikasi sendiri
+   - Make → siswa membuat dari nol tanpa bantuan apapun
+   - *Semakin maju tahap, semakin mandiri siswa — inilah fading*
+
+2. **Lapisan AI (conversational)** — Bot membimbing siswa **dalam satu tahap** yang sedang dikerjakan. Bot tidak berubah karakter antar tahap; yang berubah adalah konteks soal dan rubrik evaluasinya.
+
+### Tujuan Penelitian
+
+Bot ini dirancang untuk melatih dan mengukur tiga indikator **Logical Thinking**:
+
+| Indikator | Deskripsi |
+|---|---|
+| **Keruntutan Berpikir** | Siswa menjelaskan secara urut dan logis, ada alur yang jelas |
+| **Kemampuan Berargumen** | Siswa memberikan alasan (*mengapa*), bukan sekadar menyatakan (*apa*) |
+| **Penarikan Kesimpulan** | Siswa menutup jawaban dengan pernyataan yang merangkum pemahamannya |
 
 ---
 
@@ -12,328 +34,489 @@ PRIMM Bot adalah asisten virtual berbasis AI yang berperan sebagai **MKO (More K
 
 | Komponen | Detail |
 |---|---|
-| LLM | Groq — `openai/gpt-oss-120b` |
+| LLM | Groq API — model dikonfigurasi via `GROQ_MODEL` di `.env` |
 | API Endpoint | `https://api.groq.com/openai/v1/chat/completions` |
-| Format API | OpenAI-compatible (format `messages` dengan role system/user) |
+| Format API | OpenAI-compatible |
 | Autentikasi | Bearer Token (`GROQ_API_KEY` di `.env`) |
-| Service Class | `app/Services/GeminiService.php` |
-| Controller | `app/Http/Controllers/Api/SubmissionController.php` |
-| Log Interaksi | Tabel `ai_interaction_logs` di database `primmbot` |
+| Service Utama | `app/Services/AI/AIService.php` |
+| Controller Submit | `app/Http/Controllers/Api/SubmissionController.php` |
+| Controller Chat | `app/Http/Controllers/Api/ChatController.php` |
+| Log Interaksi | Tabel `ai_interaction_logs` |
 
 ### Parameter Generasi
 
 ```
-temperature : 0.7   (sedikit kreatif, tidak terlalu kaku)
-max_tokens  : 256   (hemat quota, cukup untuk 2-3 kalimat)
+temperature : 0.7    (sedikit kreatif, tidak terlalu kaku)
+max_tokens  : 300    (cukup untuk evaluasi JSON + feedback 2-3 kalimat)
 ```
 
-### Quota Free Tier Groq (per API key)
+### Quota Free Tier Groq
 
 | Limit | Nilai |
 |---|---|
 | Request per Menit (RPM) | 30 |
 | Request per Hari (RPD) | 14.400 |
 
-> Dengan 14.400 RPD, Groq jauh lebih besar dari Gemini (1.500 RPD). Cukup untuk 3 kelas (±120 siswa) dalam 1 hari penuh.
+> Cukup untuk ±120 siswa (3 kelas) dalam 1 hari penuh.
 
 ---
 
-## 3. Struktur File & Letak Logika
+## 3. Dua Mode Interaksi
 
-Ini adalah peta lengkap file mana yang bertanggung jawab atas apa:
+Tidak ada lagi tombol **CEK**. Siswa hanya memiliki dua aksi:
 
 ```
-.env
-└── GROQ_API_KEY, GROQ_MODEL
-    → Menyimpan kredensial API. TIDAK boleh di-commit ke git.
-
-config/services.php
-└── 'groq' => ['api_key' => ..., 'model' => ...]
-    → Jembatan antara .env dan kode PHP. Dibaca via config('services.groq.*').
-
-app/Services/GeminiService.php          ← PUSAT LOGIKA AI
-├── __construct()                        → Baca config API key & model
-├── loadContext()                        → Ambil ringkasan materi + struktur tabel sandbox dari DB
-├── formatMaterials()                    → Format materi untuk dimasukkan ke prompt
-├── formatSandboxTables()                → Format struktur tabel untuk dimasukkan ke prompt
-├── getSystemPrompt()                    → Instruksi dasar karakter & aturan PRIMM Bot
-├── isCasualMessage()                    → Deteksi apakah pesan siswa bersifat kasual/salam
-├── buildFeedbackPrompt()                → Susun prompt untuk tombol CEK
-├── buildEvaluationPrompt()              → Susun prompt untuk tombol SUBMIT
-├── buildChatPrompt()                    → Susun prompt untuk chat bebas
-├── call()                               → Kirim prompt ke Groq API, kembalikan respons teks
-├── parseEvaluation()                    → Parse JSON respons dari Groq untuk SUBMIT
-├── getLevelFocus()                      → Teks fokus per level Investigate
-├── fallbackFeedback()                   → Pesan statis jika API gagal (CEK)
-└── fallbackEvaluation()                 → Scoring keyword jika API gagal (SUBMIT)
-
-app/Http/Controllers/Api/SubmissionController.php
-├── check()    → Endpoint tombol CEK  → panggil GeminiService::getFeedback()
-├── submit()   → Endpoint tombol SUBMIT → panggil GeminiService::evaluateSubmission()
-│                                         atau compareOutput() untuk modified/make
-├── chat()     → Endpoint chat bebas  → panggil GeminiService::chat()
-└── compareOutput() → Eksekusi SQL siswa ke sandbox, bandingkan dengan expected_output
-
-routes/web.php
-├── POST /api/submission/check   → SubmissionController::check()
-├── POST /api/submission/submit  → SubmissionController::submit()
-└── POST /api/chat               → SubmissionController::chat()
-
-resources/views/learning/stages/*.blade.php
-└── JS di tiap file (predict, run, investigate, modified, make)
-    ├── fetch('/api/submission/check')  → dipanggil saat klik tombol Cek
-    ├── fetch('/api/submission/submit') → dipanggil saat klik tombol Submit
-    └── fetch('/api/chat')              → dipanggil saat siswa kirim pesan chat
+[Baca soal aktivitas]
+        │
+        ├──→ CHAT dengan PRIMM Bot  (jika butuh bantuan)
+        │       Bot membimbing lewat pertanyaan pemantik
+        │       Siswa boleh chat sepuasnya
+        │
+        └──→ SUBMIT jawaban  (jika sudah yakin)
+                Bot mengevaluasi → memberikan skor + feedback scaffolding
+                        │
+                ┌───────┴────────┐
+              ≥ KKM           < KKM
+                │                │
+            Lanjut ke        Feedback ditampilkan di chat widget
+            aktivitas        → Siswa bisa chat lagi, lalu submit ulang
+            berikutnya       → Tidak ada batas percobaan
 ```
 
----
+### Mengapa Tidak Ada Tombol CEK?
 
-## 4. Tiga Mode Fungsi
-
-PRIMM Bot memiliki tiga fungsi utama yang dipanggil dalam situasi berbeda:
-
-### 4.1 Tombol CEK — Feedback Scaffolding
-
-**Kapan dipanggil:** Ketika siswa mengklik tombol **Cek** di halaman aktivitas.
-
-**Tujuan:** Memberikan umpan balik yang membimbing, bukan mengoreksi secara langsung. Bot membaca jawaban siswa dan merespons dengan pertanyaan pemantik yang mendorong siswa memperbaiki jawabannya sendiri.
-
-**Method:** `GeminiService::getFeedback(Activity $activity, Submission $submission): string`
-
-**Alur:**
-1. Siswa mengisi jawaban → klik Cek
-2. `SubmissionController::check()` dipanggil via `POST /api/submission/check`
-3. Jawaban disimpan sebagai draft di tabel `submissions` (`is_correct = false`)
-4. `getFeedback()` → `loadContext()` → `buildFeedbackPrompt()` → `call()` → Groq API
-5. Feedback dikembalikan ke UI dan disimpan ke `submissions.ai_feedback`
-6. Interaksi dicatat di `ai_interaction_logs`
-
-**Konten prompt per tahap:**
-
-| Tahap | Yang dimasukkan ke prompt |
-|---|---|
-| Predict | Query SQL + pertanyaan + prediksi siswa. Arah bimbingan: kolom apa dipilih, tabel mana digabung, kondisi JOIN. |
-| Run | Query SQL + pertanyaan refleksi + jawaban siswa. Arah: bandingkan prediksi vs hasil nyata. |
-| Investigate | Query SQL + level (atoms/blocks/relations/macro) + jawaban. Arah: analisis sesuai fokus level. |
-| Modified | Instruksi soal + kode SQL siswa + penjelasan. Arah: apakah arah modifikasi sudah benar. |
-| Make | Instruksi soal + kode SQL siswa + penjelasan. Arah: cek kelengkapan SELECT/FROM/JOIN/ON. |
-
-**Fallback (jika API gagal):** Pesan statis per tahap, contoh:
-- Predict: *"Coba perhatikan query dengan teliti. Kolom apa saja yang dipilih oleh SELECT? Tabel mana yang digabungkan oleh JOIN?"*
+Tombol CEK dan Submit yang terpisah seringkali membingungkan siswa tentang kapan harus melakukan apa. Dengan desain baru:
+- **Chat** = ruang bebas eksplorasi dan bertanya — tidak ada tekanan
+- **Submit** = komitmen jawaban — siswa submit hanya jika sudah yakin
+- Feedback setelah submit tetap berupa scaffolding (bukan langsung "ini salahnya"), sehingga siswa tetap perlu berpikir untuk memperbaiki
 
 ---
 
-### 4.2 Tombol SUBMIT — Evaluasi & Penilaian
+## 4. Mode CHAT — Bimbingan Conversational
 
-**Kapan dipanggil:** Ketika siswa mengklik tombol **Submit** (jawaban final).
+### Kapan Digunakan
+Kapan saja selama siswa merasa bingung atau butuh arahan. Tidak perlu mengisi jawaban dulu.
 
-**Tujuan:** Mengevaluasi kualitas jawaban siswa dan memberikan skor 0–100 beserta feedback singkat.
+### Konteks yang Dimiliki AI
+Saat menjawab chat, AI mengetahui:
+- Stage dan level aktivitas yang sedang dikerjakan
+- Soal (`question_text`) dan kode SQL (`code_snippet`) aktivitas
+- Ringkasan materi dari chapter
+- Struktur tabel sandbox (nama kolom, PK, FK)
+- Riwayat submit terakhir siswa: skor, jawaban, percobaan ke berapa
+- Riwayat percakapan chat sebelumnya (persisten, tidak hilang saat refresh)
 
-**Method:** `GeminiService::evaluateSubmission(Activity $activity, ?string $answerText, ?string $answerCode): array`
+### Yang TIDAK Dimiliki AI Secara Otomatis
+- Isi jawaban/kode yang sedang ditulis siswa (kecuali siswa sengaja paste di pesan chat)
 
-**Alur:**
-1. Siswa submit → `SubmissionController::submit()` via `POST /api/submission/submit`
-2. Sistem menentukan metode evaluasi berdasarkan tahap:
-   - **Predict / Run / Investigate** → evaluasi via Groq (jawaban berbasis narasi/teks)
-   - **Modified / Make** → eksekusi SQL langsung ke `primmbot_sandbox` → bandingkan output dengan `expected_output` (lebih akurat, tidak perlu AI)
-3. Submission final disimpan ke tabel `submissions` dengan `is_correct`, `score`, `ai_feedback`
+> **Mengapa?** Ini disengaja — siswa dipaksa mengartikula sendiri di mana letak kesulitannya sebelum minta bantuan. Proses itu sendiri melatih metakognisi.
 
-**Format respons Groq untuk evaluasi:**
+### Riwayat Percakapan
+Riwayat chat disimpan di tabel `ai_interaction_logs` (`type = 'chat'`). Saat siswa membuka kembali halaman aktivitas, riwayat percakapan dimuat ulang dari DB — tidak hilang meski halaman di-refresh.
+
+### Jenis Respons AI
+- Jika pesan kasual (sapa, perkenalan) → AI merespons natural tanpa injeksi konteks soal
+- Jika pesan terkait materi → AI merespons dengan scaffolding: pertanyaan pemantik, hint arah, tanpa jawaban
+
+---
+
+## 5. Mode SUBMIT — Evaluasi dengan Scaffolding
+
+### Kapan Digunakan
+Saat siswa sudah yakin dengan jawabannya dan ingin dikumpulkan.
+
+### Yang Dikirim ke Sistem
+```
+activity_id   : ID aktivitas
+answer_text   : Jawaban narasi/penjelasan siswa (nullable)
+answer_code   : Kode SQL yang ditulis siswa (nullable)
+```
+
+### Alur Evaluasi
+
+```
+SubmissionController::submit()
+    │
+    ├─ Hitung attempt ke-berapa (query submissions terakhir + 1)
+    │
+    ├─ AIService::evaluateSubmission(activity, submission)
+    │       │
+    │       ├─ ContextLoader::load(activity)
+    │       │       → ambil ringkasan materi + DESCRIBE tabel sandbox
+    │       │
+    │       ├─ [stage = predict / run / investigate]
+    │       │       NarrativeEvaluator::evaluate()
+    │       │           → StagePrompt::buildEvaluationPrompt()
+    │       │           → GroqClient::call()
+    │       │           → ResponseParser::parseEvaluation()
+    │       │
+    │       └─ [stage = modify / make]
+    │               SqlEvaluator::evaluate()
+    │                   → Jalankan SQL siswa ke primmbot_sandbox
+    │                   → Bandingkan actual output vs expected_output
+    │                   → StagePrompt::buildEvaluationPrompt()
+    │                   → GroqClient::call()
+    │                   → ResponseParser::parseEvaluation()
+    │
+    ├─ ResponseParser mengembalikan EvaluationResult:
+    │       { keruntutan, berargumen, kesimpulan }  ← dari AI
+    │
+    ├─ PHP menghitung skor total:
+    │       total = round((keruntutan + berargumen + kesimpulan) / 3)
+    │       is_correct = total >= activity.kkm
+    │
+    ├─ Simpan ke tabel submissions (record BARU, bukan update)
+    │
+    ├─ Catat ke ai_interaction_logs (type = 'submit')
+    │
+    └─ Kembalikan ke frontend:
+            { is_correct, score, feedback }
+            → Tampilkan feedback di chat widget
+```
+
+### Format Respons AI (JSON)
+
+AI diminta membalas hanya dengan JSON berikut:
 ```json
-{"score": 85, "is_correct": true, "feedback": "Analisis kamu sudah sangat baik..."}
+{
+  "keruntutan": 80,
+  "berargumen": 65,
+  "kesimpulan": 75,
+  "feedback": "Analisismu sudah mengarah dengan baik! Coba perhatikan lagi — apakah kamu sudah menjelaskan *mengapa* tabel buku dan penerbit bisa digabungkan, bukan hanya *bahwa* keduanya digabungkan?"
+}
 ```
 
-**Kriteria penilaian per tahap:**
+> `feedback` selalu berupa **scaffolding** (pertanyaan pemantik / hint arah), bukan evaluasi langsung seperti "ini salah karena...".
 
-| Tahap | 85-100 | 70-84 | 50-69 | 0-49 |
-|---|---|---|---|---|
-| Predict | Sebut kolom + tabel + kondisi JOIN dengan jelas | Relevan sebagian | Kurang detail | Singkat/tidak relevan |
-| Run | Bandingkan prediksi vs hasil + alasan jelas | Bandingkan tanpa alasan | Sebut hasil saja | Tidak relevan |
-| Investigate | Analisis mendalam sesuai level | Cukup baik | Dangkal | Tidak mencakup aspek level |
+### Penghitungan Skor (di PHP, bukan AI)
 
-**Fallback (jika API gagal):** Scoring berbasis keyword — cek apakah jawaban mengandung kata kunci SQL (`join`, `tabel`, `kolom`, `select`, dll). Minimal 15 karakter, skor 65–100 tergantung jumlah keyword yang cocok.
+```php
+// ResponseParser.php
+$total = (int) round(
+    ($result->keruntutan + $result->berargumen + $result->kesimpulan) / 3
+);
+$result->total     = $total;
+$result->isCorrect = $total >= $activity->kkm;
+```
+
+AI hanya memberi skor mentah per indikator. PHP yang memutuskan lulus/tidak berdasarkan KKM aktivitas.
+
+### Submit Ulang
+
+Siswa boleh submit berkali-kali hingga skor ≥ KKM. Setiap submit menghasilkan record baru di `submissions` dengan `attempt` yang bertambah. Ini penting untuk:
+- Siswa: bisa terus belajar tanpa takut "terkunci"
+- Penelitian: dapat menganalisis perkembangan skor per indikator dari attempt ke attempt
 
 ---
 
-### 4.3 Chat Bebas — Virtual Assistant
+## 6. Sistem Evaluasi Logical Thinking
 
-**Kapan dipanggil:** Kapan saja — siswa dapat langsung chat tanpa harus klik Cek/Submit terlebih dahulu.
+### Mengapa Menggunakan LLM, Bukan Keyword Matching?
 
-**Tujuan:** Ruang bebas bertanya. Siswa bisa bertanya apa saja seputar materi, minta penjelasan konsep, atau sekadar menyapa. Bot tetap menggunakan pendekatan scaffolding jika pertanyaan menyangkut SQL/materi.
+Penanda linguistik (kata "karena", "jadi", "pertama") adalah fitur permukaan bahasa — tidak cukup untuk menilai kualitas berpikir. Contoh:
+- *"hasilnya nama buku karena join"* → mengandung "karena" tapi tidak benar-benar berargumen
+- *"query menggabungkan tabel buku dengan penerbit melalui kolom id_penerbit yang merupakan FK"* → tidak ada kata "karena" tapi jelas berargumen
 
-**Method:** `GeminiService::chat(Activity $activity, string $userMessage, array $history = []): string`
+LLM mengevaluasi **makna dan struktur**, bukan sekadar kehadiran kata. Namun agar evaluasi konsisten dan bisa dipertanggungjawabkan, AI diberi **rubrik eksplisit** di setiap prompt.
 
-**Endpoint:** `POST /api/chat`
+### Rubrik Disimpan di Kode, Bukan DB
 
-**Alur:**
-1. Siswa ketik pesan → Enter atau klik tombol kirim
-2. `SubmissionController::chat()` dipanggil
-3. `isCasualMessage()` mendeteksi apakah pesan **kasual** atau **terkait materi**
-4. `buildChatPrompt()` menyusun prompt (dengan atau tanpa konteks aktivitas)
-5. `call()` mengirim ke Groq API → respons dikembalikan ke chat UI
-6. Riwayat percakapan disimpan di frontend (array `chatHistory`, max 6 pesan terakhir dikirim ke API)
-7. Setiap interaksi dicatat di `ai_interaction_logs`
+Rubrik logical thinking adalah **konstanta penelitian** — tidak boleh berubah antar aktivitas karena akan merusak konsistensi pengukuran. Setiap file `*Prompt.php` memiliki method `getRubrik()` yang mendefinisikan arti setiap indikator dalam konteks stage tersebut.
 
-**Deteksi pesan kasual (`isCasualMessage()`):**
-Jika pesan mengandung kata seperti `halo`, `hai`, `hi`, `hello`, `siapa namamu`, `tes`, `selamat`, atau panjangnya ≤ 5 karakter → dianggap kasual. Konteks soal SQL **tidak** diinjeksi ke prompt sehingga bot merespons secara natural tanpa memaksakan konteks SQL.
+### Rubrik Per Stage
 
-**Deteksi pesan terkait materi:**
-Jika pesan tidak kasual → konteks aktivitas diinjeksi: ringkasan materi (maks 800 karakter) + struktur tabel sandbox + tahap PRIMM + soal yang sedang dikerjakan.
+#### Predict
+```
+Nilai tiga indikator:
+- keruntutan: apakah penjelasan siswa urut dari struktur query
+              (SELECT → tabel yang di-JOIN → kondisi ON → output)?
+- berargumen: apakah siswa menjelaskan MENGAPA output akan seperti itu,
+              bukan sekadar menyebutkan apa outputnya?
+- kesimpulan: apakah siswa menarik kesimpulan tentang output yang
+              akan dihasilkan berdasarkan analisisnya?
+```
+
+#### Run
+```
+Nilai tiga indikator:
+(Konteks: siswa baru saja menjalankan query dan melihat output nyata.
+ Jawaban Predict sebelumnya diinjeksi ke prompt ini.)
+
+- keruntutan: apakah refleksi urut dari prediksi → hasil nyata → alasan perbedaan/kesamaan?
+- berargumen: apakah siswa menjelaskan MENGAPA prediksinya berbeda atau sama
+              dengan output nyata?
+- kesimpulan: apakah siswa menyimpulkan apa yang dipelajari dari perbandingan ini?
+```
+
+#### Investigate
+```
+Nilai tiga indikator:
+(Fokus berbeda per level — diinjeksi ke prompt)
+
+Level atoms    → analisis elemen terkecil query (karakter, tanda baca, kata kunci)
+Level blocks   → analisis fungsi tiap klausa (SELECT, FROM, JOIN, ON)
+Level relations→ analisis relasi PK-FK antar tabel
+Level macro    → analisis konteks penggunaan query di dunia nyata
+
+- keruntutan: apakah analisis urut dan sistematis sesuai fokus levelnya?
+- berargumen: apakah siswa menjelaskan fungsi/alasan setiap elemen yang dianalisis?
+- kesimpulan: apakah siswa menyimpulkan temuan dari analisisnya?
+```
+
+#### Modify
+```
+Nilai tiga indikator:
+(Kode awal editor_default_code diinjeksi untuk perbandingan)
+
+- keruntutan: apakah siswa memahami kode asal → mengidentifikasi yang perlu diubah
+              → menerapkan perubahan secara logis?
+- berargumen: apakah siswa menjelaskan MENGAPA memodifikasi bagian tersebut?
+- kesimpulan: apakah siswa menyimpulkan apakah modifikasinya sudah menjawab perintah soal?
+```
+
+#### Make
+```
+Nilai tiga indikator:
+(Siswa menulis SQL dari nol — tidak ada kode awal)
+
+- keruntutan: apakah siswa membangun query secara urut
+              (kebutuhan → pilih tabel → tentukan JOIN → tulis SELECT)?
+- berargumen: apakah siswa menjelaskan MENGAPA memilih tabel dan kondisi JOIN tersebut?
+- kesimpulan: apakah siswa menyimpulkan apakah query-nya sudah menjawab kebutuhan soal?
+```
 
 ---
 
-## 5. Injeksi Konteks (Context Injection)
-
-Setiap kali AI dipanggil untuk CEK, SUBMIT, atau CHAT terkait materi, prompt dibangun dengan menyertakan konteks dari database. Ini dilakukan di `loadContext()` yang membaca:
-- `lesson_materials` (type = `ringkasan_materi`) dari chapter aktivitas
-- Struktur kolom tabel di `primmbot_sandbox` via query `DESCRIBE`
-
-**Struktur prompt yang dikirim ke Groq:**
-```
-[System Prompt — karakter & aturan PRIMM Bot]
-[MATERI] ... ringkasan_materi dari lesson_materials (maks 800 karakter) ... [/MATERI]
-[DB]
-nama_tabel: kolom1(PK), kolom2, kolom3(FK)
-...
-[/DB]
-Konteks aktivitas — Tahap: ... Soal: ... SQL: ...
-[Riwayat percakapan (maks 6 pesan terakhir)]
-Siswa: [pesan siswa]
-Jawab sebagai PRIMM Bot, 2-3 kalimat:
-```
-
-**Kenapa tidak pakai RAG/vector search?**
-- Ringkasan materi per chapter kecil (< 2000 karakter) → muat di prompt langsung
-- Tidak perlu infrastruktur tambahan (Supabase + pgvector)
-- Lebih sederhana dan cukup untuk skala SMKN 4 Bandung
-
----
-
-## 6. Sistem Prompt & Prinsip Scaffolding
+## 7. Struktur File Lengkap
 
 ```
-Kamu adalah PRIMM Bot, asisten belajar SQL untuk siswa SMK kelas XI.
-Jika siswa menyapa atau berkenalan, balas dengan ramah dan natural.
-Jika siswa bertanya soal SQL/materi, gunakan scaffolding: bimbing dengan pertanyaan pemantik,
-JANGAN beri jawaban/kode langsung.
-Maks 3 kalimat, Bahasa Indonesia ramah.
-```
-
-**Teknik scaffolding yang diterapkan (Bloom's Taxonomy):**
-
-| Level | Teknik | Contoh Pertanyaan Bot |
-|---|---|---|
-| Ingat (Remember) | Recall | "Ingat di materi tadi, apa fungsi klausa JOIN?" |
-| Pahami (Understand) | Parafrase | "Coba jelaskan dengan bahasamu sendiri, apa arti ON dalam query ini?" |
-| Terapkan (Apply) | Aplikasi konkret | "Kalau ingin menampilkan nama buku dan penerbitnya, kolom mana yang dihubungkan?" |
-| Analisis (Analyze) | Eksplorasi sebab-akibat | "Kenapa hasilnya berbeda jika kamu ganti kondisi ON-nya?" |
-
----
-
-## 7. Level Investigate & Fokusnya
-
-Tahap Investigate memiliki 4 level dengan fokus analisis yang berbeda:
-
-| Level | Fokus Analisis |
-|---|---|
-| `atoms` | Elemen terkecil query: karakter, tanda baca, kata kunci individual (SELECT, FROM, JOIN, ON, titik pemisah tabel.kolom) |
-| `blocks` | Baris/klausa query: fungsi setiap klausa, urutan penulisan, kondisi ON dalam JOIN |
-| `relations` | Relasi antar tabel: Primary Key, Foreign Key, dan cara tabel dihubungkan melalui JOIN |
-| `macro` | Konteks keseluruhan: kapan dan mengapa query jenis ini digunakan di dunia nyata |
-
----
-
-## 8. Alur Data Lengkap
-
-```
-Siswa (UI Browser)
+app/Services/AI/
+│
+├── AIService.php
+│   Orchestrator — satu-satunya class yang dipanggil controller.
+│   Method publik:
+│   - evaluateSubmission(Activity, Submission): EvaluationResult
+│   - chat(Activity, string $message, array $history, ?Submission $latest): string
+│
+├── GroqClient.php
+│   HTTP layer saja. Tidak tahu konteks apapun.
+│   - call(string $prompt, int $maxTokens = 300): ?string
+│
+├── ContextLoader.php
+│   Mengambil data dari DB untuk diinjeksi ke prompt.
+│   - load(Activity): array ['materials' => ..., 'sandboxTables' => ...]
+│     → materials: ringkasan materi (lesson_materials type=ringkasan_materi), maks 800 karakter
+│     → sandboxTables: hasil DESCRIBE tiap tabel di primmbot_sandbox untuk activity ini
+│
+├── ResponseParser.php
+│   Mengubah string JSON dari AI menjadi EvaluationResult.
+│   - parseEvaluation(string $response, int $kkm): EvaluationResult
+│     → hitung total = rata-rata tiga indikator
+│     → set isCorrect = total >= kkm
+│
+├── EvaluationResult.php
+│   Value object hasil evaluasi. Tidak punya method, hanya properti.
+│   Properti: keruntutan, berargumen, kesimpulan, total, isCorrect, feedback
+│
+├── Prompts/
+│   │
+│   ├── SystemPrompt.php
+│   │   Identitas dan aturan PRIMM Bot. Dipakai di semua jenis prompt.
+│   │   - get(): string
+│   │
+│   ├── ChatPrompt.php
+│   │   Membangun prompt untuk percakapan bebas.
+│   │   - build(Activity, string $msg, array $history, array $context,
+│   │           ?Submission $latest): string
+│   │     → Jika pesan kasual → tidak injeksi konteks soal
+│   │     → Jika pesan terkait materi → injeksi konteks + riwayat submit terakhir
+│   │
+│   └── Stages/
+│       ├── PredictPrompt.php
+│       │   - buildEvaluationPrompt(Activity, Submission, array $context): string
+│       │   - getRubrik(): string  ← kriteria 3 indikator untuk stage Predict
+│       │
+│       ├── RunPrompt.php
+│       │   - buildEvaluationPrompt(Activity, Submission, array $context,
+│       │                           ?string $predictAnswer): string
+│       │     → $predictAnswer: jawaban Predict siswa diinjeksi agar AI bisa
+│       │       menilai kualitas perbandingan prediksi vs realita
+│       │   - getRubrik(): string
+│       │
+│       ├── InvestigatePrompt.php
+│       │   - buildEvaluationPrompt(Activity, Submission, array $context): string
+│       │     → level (atoms/blocks/relations/macro) diinjeksi untuk mengubah fokus rubrik
+│       │   - getRubrik(string $level): string
+│       │   - getLevelFocus(string $level): string  ← deskripsi fokus per level
+│       │
+│       ├── ModifyPrompt.php
+│       │   - buildEvaluationPrompt(Activity, Submission, array $context,
+│       │                           array $actualOutput, array $expectedOutput): string
+│       │     → actualOutput: hasil eksekusi SQL siswa
+│       │     → expectedOutput: JSON yang tersimpan di activities.expected_output
+│       │     → editor_default_code diinjeksi untuk perbandingan
+│       │   - getRubrik(): string
+│       │
+│       └── MakePrompt.php
+│           - buildEvaluationPrompt(Activity, Submission, array $context,
+│                                   array $actualOutput, array $expectedOutput): string
+│           - getRubrik(): string
+│
+└── Evaluators/
+    ├── NarrativeEvaluator.php
+    │   Menangani evaluasi untuk stage: Predict, Run, Investigate
+    │   - evaluate(Activity, Submission, array $context): EvaluationResult
+    │     → resolve StagePrompt berdasarkan stage
+    │     → untuk Run: ambil jawaban Predict sebelumnya dari DB
+    │     → panggil GroqClient → ResponseParser
     │
-    ├─[Klik Cek]──────────► POST /api/submission/check
-    │                            │
-    │                            ├─ Simpan draft ke submissions
-    │                            ├─ GeminiService::getFeedback()
-    │                            │      └─ loadContext()         → DB: materi + struktur tabel
-    │                            │      └─ buildFeedbackPrompt() → susun prompt per tahap
-    │                            │      └─ call()                → Groq API
-    │                            ├─ Simpan ai_feedback ke submissions
-    │                            ├─ Catat ke ai_interaction_logs
-    │                            └─ Return { success, feedback }
-    │
-    ├─[Klik Submit]────────► POST /api/submission/submit
-    │                            │
-    │                            ├─ evaluateAnswer()
-    │                            │      ├─ predict/run/investigate
-    │                            │      │      └─ GeminiService::evaluateSubmission()
-    │                            │      │             └─ call() → Groq API → parse JSON
-    │                            │      └─ modified/make
-    │                            │             └─ compareOutput() → eksekusi SQL ke sandbox
-    │                            ├─ Simpan submission final ke submissions
-    │                            ├─ Catat ke ai_interaction_logs
-    │                            └─ Return { success, is_correct, score, feedback }
-    │
-    └─[Chat]───────────────► POST /api/chat
-                                 │
-                                 ├─ GeminiService::chat()
-                                 │      ├─ isCasualMessage()   → deteksi jenis pesan
-                                 │      ├─ loadContext()        → DB: materi + struktur tabel
-                                 │      ├─ buildChatPrompt()    → susun prompt (dengan/tanpa konteks)
-                                 │      └─ call()               → Groq API
-                                 ├─ Catat ke ai_interaction_logs
-                                 └─ Return { success, response }
+    └── SqlEvaluator.php
+        Menangani evaluasi untuk stage: Modify, Make
+        - evaluate(Activity, Submission, array $context): EvaluationResult
+          → jalankan answer_code ke primmbot_sandbox (READ-ONLY, SELECT saja)
+          → jika error: kembalikan skor 20 dengan feedback error SQL
+          → bandingkan actual output vs expected_output
+          → panggil GroqClient → ResponseParser
 ```
 
 ---
 
-## 9. Log Interaksi (`ai_interaction_logs`)
+## 8. Perubahan Database
 
-Setiap panggilan ke Groq (CEK, SUBMIT, CHAT) dicatat dengan struktur:
+### Tabel `activities` — tambah kolom
+```sql
+ALTER TABLE activities ADD COLUMN kkm INTEGER NOT NULL DEFAULT 70
+    AFTER expected_output;
+```
+KKM dapat diatur oleh guru dari admin panel per aktivitas. Default 70.
 
-| Kolom | Isi |
-|---|---|
-| `user_id` | ID siswa yang melakukan interaksi |
-| `activity_id` | ID aktivitas PRIMM yang sedang dikerjakan |
-| `prompt_sent` | Label singkat: `check:predict`, `submit:run`, atau isi pesan chat |
-| `response_received` | Teks respons dari Groq |
-| `tokens_used` | Nullable — belum diisi |
-| `response_time` | Nullable — belum diisi |
+### Tabel `submissions` — tambah kolom + ubah constraint
+```sql
+-- Tambah kolom skor per indikator
+ALTER TABLE submissions
+    ADD COLUMN score_keruntutan INTEGER NULL AFTER score,
+    ADD COLUMN score_berargumen  INTEGER NULL AFTER score_keruntutan,
+    ADD COLUMN score_kesimpulan  INTEGER NULL AFTER score_berargumen,
+    ADD COLUMN attempt           INTEGER NOT NULL DEFAULT 1 AFTER score_kesimpulan;
 
-> Log ini dapat dilihat oleh admin untuk memantau kualitas interaksi siswa dengan AI (fitur tampilan admin belum diimplementasi).
+-- Hapus unique constraint (jika ada) agar bisa multi-submit
+-- ALTER TABLE submissions DROP INDEX submissions_user_id_activity_id_unique;
+```
+
+Kolom `score` sekarang diisi oleh PHP (rata-rata tiga indikator), bukan AI.
+
+### Tabel `ai_interaction_logs` — tambah kolom
+```sql
+ALTER TABLE ai_interaction_logs
+    ADD COLUMN type ENUM('chat', 'submit') NOT NULL DEFAULT 'chat' AFTER activity_id;
+```
+
+Pemisahan type penting agar riwayat chat tidak tercampur dengan log evaluasi submit.
+
+---
+
+## 9. Alur Data Lengkap
+
+```
+Siswa (Browser)
+    │
+    ├─[Kirim pesan chat]──────► POST /api/chat
+    │                               │
+    │                         ChatController::chat()
+    │                               │
+    │                         Ambil latestSubmission dari DB
+    │                         (submissions WHERE user+activity ORDER BY attempt DESC)
+    │                               │
+    │                         Ambil chatHistory dari DB
+    │                         (ai_interaction_logs WHERE type='chat' ORDER BY created_at)
+    │                               │
+    │                         AIService::chat()
+    │                               ├─ ContextLoader::load()
+    │                               ├─ ChatPrompt::build()
+    │                               └─ GroqClient::call()
+    │                               │
+    │                         Simpan ke ai_interaction_logs (type='chat')
+    │                               │
+    │                         Return { response }
+    │                         → Tampilkan di chat widget
+    │
+    └─[Klik Submit]───────────► POST /api/submission/submit
+                                    │
+                              SubmissionController::submit()
+                                    │
+                              Hitung attempt = last attempt + 1
+                                    │
+                              AIService::evaluateSubmission()
+                                    ├─ ContextLoader::load()
+                                    ├─ [predict/run/investigate]
+                                    │       NarrativeEvaluator::evaluate()
+                                    │           └─ StagePrompt + GroqClient + ResponseParser
+                                    └─ [modify/make]
+                                            SqlEvaluator::evaluate()
+                                                ├─ Eksekusi SQL → primmbot_sandbox
+                                                └─ StagePrompt + GroqClient + ResponseParser
+                                    │
+                              PHP hitung total score + is_correct
+                                    │
+                              Simpan record BARU ke submissions
+                              (score, score_keruntutan, score_berargumen,
+                               score_kesimpulan, attempt, is_correct, ai_feedback)
+                                    │
+                              Simpan ke ai_interaction_logs (type='submit')
+                                    │
+                              Return { is_correct, score, feedback }
+                              → Tampilkan feedback di chat widget
+                              → Jika is_correct: tampilkan tombol Lanjut
+```
 
 ---
 
 ## 10. Konfigurasi & Environment
 
-**File: `.env`** — menyimpan kredensial, tidak boleh di-commit ke git
+**File `.env`:**
 ```env
 GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=openai/gpt-oss-120b
+GROQ_MODEL=llama-3.1-70b-versatile
 ```
 
-**File: `config/services.php`** — jembatan ke kode PHP
+**File `config/services.php`:**
 ```php
 'groq' => [
     'api_key' => env('GROQ_API_KEY'),
-    'model'   => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+    'model'   => env('GROQ_MODEL', 'llama-3.1-70b-versatile'),
 ],
 ```
 
-**File: `app/Services/GeminiService.php`** — membaca konfigurasi via:
-```php
-$this->apiKey = config('services.groq.api_key', '');
-$this->model  = config('services.groq.model', 'openai/gpt-oss-120b');
-```
-
-Setelah mengubah `.env`, **wajib** jalankan:
+Setelah mengubah `.env`:
 ```bash
 php artisan config:clear
 ```
 
----
-
-## 11. Mengganti API Key (jika quota habis)
-
-1. Buat API key baru di [console.groq.com](https://console.groq.com) → API Keys
-2. Ganti nilai `GROQ_API_KEY` di `.env`
+### Mengganti API Key (jika quota habis)
+1. Buat API key baru di console.groq.com → API Keys
+2. Ganti `GROQ_API_KEY` di `.env`
 3. Jalankan `php artisan config:clear`
 
-Untuk memantau sisa quota, cek di [console.groq.com](https://console.groq.com) → Usage.
+---
+
+## 11. Fallback (jika API Gagal)
+
+Jika Groq API tidak merespons atau error, sistem tidak boleh crash. Setiap evaluator memiliki fallback:
+
+**NarrativeEvaluator** — scoring berbasis panjang & kandungan teks:
+```
+Jika jawaban < 15 karakter → skor 20 (terlalu singkat)
+Jika jawaban ≥ 15 karakter → cek keyword SQL relevan
+    (join, tabel, kolom, select, relasi, primary, foreign, dll)
+    skor = 65 + (jumlah keyword × 5), maks 85
+```
+
+**SqlEvaluator** — jika SQL error:
+```
+Return skor 20 dengan feedback: "Query menghasilkan error: [pesan error]"
+```
+
+**ChatPrompt** — jika API gagal:
+```
+Return: "Maaf, asisten virtual sedang tidak tersedia. Coba beberapa saat lagi."
+```

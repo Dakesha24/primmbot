@@ -50,8 +50,11 @@ class LearningController extends Controller
 
         $submission = Submission::where('user_id', Auth::id())
             ->where('activity_id', $activity->id)
-            ->latest()
+            ->with('teacherReview')
+            ->orderBy('attempt', 'desc')
             ->first();
+
+        $teacherReview = $submission?->teacherReview;
 
         $predictSubmission = null;
         if ($activity->stage === 'run') {
@@ -84,22 +87,12 @@ class LearningController extends Controller
         $currentNumber = $currentIndex + 1;
         $totalSiblings = $siblings->count();
 
-        // Load riwayat chat dari database untuk restore saat halaman dimuat
+        // Load riwayat chat (type='chat') dari database untuk restore tampilan saat halaman dimuat
         $chatLogs = AiInteractionLog::where('user_id', Auth::id())
             ->where('activity_id', $activity->id)
+            ->where('type', 'chat')
             ->orderBy('created_at')
             ->get(['prompt_sent', 'response_received']);
-
-        // Hanya pesan chat (bukan Cek/Submit) untuk konteks API history
-        $chatHistory = $chatLogs->filter(fn($l) =>
-            !str_starts_with($l->prompt_sent, 'Cek jawaban') &&
-            !str_starts_with($l->prompt_sent, 'Submit jawaban') &&
-            !str_starts_with($l->prompt_sent, 'check:') &&
-            !str_starts_with($l->prompt_sent, 'submit:')
-        )->flatMap(fn($l) => [
-            ['role' => 'user', 'message' => $l->prompt_sent],
-            ['role' => 'assistant', 'message' => $l->response_received],
-        ])->values()->toArray();
 
         $sandboxTables = [];
         if ($activity->sandbox_database_id) {
@@ -148,7 +141,7 @@ class LearningController extends Controller
             'totalSiblings',
             'sandboxTables',
             'chatLogs',
-            'chatHistory',
+            'teacherReview',
         ));
     }
 

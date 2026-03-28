@@ -16,6 +16,10 @@ class Submission extends Model
         'answer_code',
         'is_correct',
         'score',
+        'score_keruntutan',
+        'score_berargumen',
+        'score_kesimpulan',
+        'attempt',
         'ai_feedback',
     ];
 

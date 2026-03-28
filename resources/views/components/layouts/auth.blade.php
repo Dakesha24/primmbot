@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'PRIMMBOT' }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,10 +50,24 @@
             text-decoration: none;
         }
         .auth-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 800; font-size: 1.6rem; color: #fff;
             letter-spacing: -0.5px;
         }
-        .auth-logo span { color: var(--cyan-400); }
+        .auth-logo img { height: 34px; width: auto; object-fit: contain; }
+        .auth-logo .logo-text { color: #fff; }
+        .auth-logo .logo-text span { color: var(--cyan-400); }
+
+        .pw-wrap { position: relative; }
+        .pw-wrap .form-input { padding-right: 2.8rem; }
+        .pw-toggle {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer;
+            color: #475569; padding: 4px; line-height: 0;
+        }
+        .pw-toggle:hover { color: #94a3b8; }
         .auth-subtitle {
             color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;
         }
@@ -236,7 +251,7 @@
     <div class="auth-container fade-up">
         <div class="auth-header">
             <a href="{{ route('home') }}">
-                <div class="auth-logo">PRIMM<span>BOT</span></div>
+                <div class="auth-logo"><img src="{{ asset('assets/images/logo.png') }}" alt="PRIMMBOT"><span class="logo-text">PRIMM<span>BOT</span></span></div>
             </a>
             <p class="auth-subtitle">Platform e-LKPD Interaktif</p>
         </div>
@@ -245,5 +260,15 @@
             {{ $slot }}
         </div>
     </div>
+    <script>
+        function togglePw(id, btn) {
+            const input = document.getElementById(id);
+            const isText = input.type === 'text';
+            input.type = isText ? 'password' : 'text';
+            btn.innerHTML = isText
+                ? `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+                : `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+        }
+    </script>
 </body>
 </html>
