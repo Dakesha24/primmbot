@@ -7,7 +7,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -46,11 +48,17 @@ class ProfileController extends Controller
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             // Hapus avatar lama jika ada
-            if ($profile && $profile->avatar) {
-                Storage::disk('public')->delete($profile->avatar);
+            if ($profile && $profile->avatar && !str_starts_with($profile->avatar, 'http')) {
+                $oldPath = public_path('avatars/' . basename($profile->avatar));
+                if (File::exists($oldPath)) {
+                    File::delete($oldPath);
+                }
             }
 
-            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $file = $request->file('avatar');
+            $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('avatars'), $filename);
+            $data['avatar'] = 'avatars/' . $filename;
         }
 
         if (!$profile) {
@@ -93,8 +101,11 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Hapus avatar jika ada
-        if ($user->profile && $user->profile->avatar) {
-            Storage::disk('public')->delete($user->profile->avatar);
+        if ($user->profile && $user->profile->avatar && !str_starts_with($user->profile->avatar, 'http')) {
+            $oldPath = public_path('avatars/' . basename($user->profile->avatar));
+            if (File::exists($oldPath)) {
+                File::delete($oldPath);
+            }
         }
 
         Auth::logout();

@@ -33,8 +33,8 @@ class Profile extends Model
         if (!$this->avatar) return null;
         // Google OAuth atau URL eksternal lain — gunakan langsung
         if (str_starts_with($this->avatar, 'http')) return $this->avatar;
-        // File lokal di storage
-        return asset('storage/' . $this->avatar);
+        // File lokal di public/avatars/
+        return asset($this->avatar);
     }
 
     public function isComplete(): bool
