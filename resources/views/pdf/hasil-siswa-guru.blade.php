@@ -75,7 +75,7 @@
 
 <div class="doc-header">
     <h1>Laporan Hasil Belajar — {{ $course->title }}</h1>
-    <p>PRIMMBOT · Dicetak oleh Guru · {{ $identity['tgl_cetak'] }}</p>
+    <p>PRIMMBASE · Dicetak oleh Guru · {{ $identity['tgl_cetak'] }}</p>
 </div>
 
 <div class="identity-box">
@@ -199,7 +199,7 @@
     </div>
 @endforeach
 
-<div class="footer">PRIMMBOT — Platform e-LKPD Basis Data · {{ $identity['sekolah'] }}</div>
+<div class="footer">PRIMMBASE — Platform e-LKPD Basis Data · {{ $identity['sekolah'] }}</div>
 
 </div>
 </body>

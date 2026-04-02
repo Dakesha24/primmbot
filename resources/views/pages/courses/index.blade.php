@@ -1,4 +1,4 @@
-<x-layouts.app title="LKPD - PRIMMBOT">
+<x-layouts.app title="LKPD - PRIMMBASE">
 
     <div class="page-header fade-up">
         <h1 class="page-title">Daftar LKPD</h1>

@@ -10,9 +10,18 @@ use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LearningController extends Controller
 {
+    // =========================================================================
+    // STAGE GATE — kunci navigasi hingga tahap diselesaikan
+    // Untuk development/debugging: ganti true → false untuk menonaktifkan kunci
+    // =========================================================================
+    private bool $stageGateEnabled = false;
+    // private bool $stageGateEnabled = false; // DEV: nonaktifkan kunci navigasi
+    // =========================================================================
+
     public function material(Chapter $chapter, string $type)
     {
         $material = $chapter->lessonMaterials()->where('type', $type)->firstOrFail();
@@ -20,8 +29,9 @@ class LearningController extends Controller
 
         $completedMaterialIds = $this->getCompletedMaterialIds($chapter);
         $completedActivityIds = $this->getCompletedActivityIds($chapter);
+        $sidebarStageAccess   = $this->getSidebarStageAccess($chapter, $completedActivityIds);
 
-        return view('learning.material', compact('chapter', 'material', 'completedMaterialIds', 'completedActivityIds'));
+        return view('learning.material', compact('chapter', 'material', 'completedMaterialIds', 'completedActivityIds', 'sidebarStageAccess'));
     }
 
     public function summary(Chapter $chapter)
@@ -34,8 +44,9 @@ class LearningController extends Controller
         $chapter->load(['lessonMaterials', 'activities']);
         $completedMaterialIds = $this->getCompletedMaterialIds($chapter);
         $completedActivityIds = $this->getCompletedActivityIds($chapter);
+        $sidebarStageAccess   = $this->getSidebarStageAccess($chapter, $completedActivityIds);
 
-        return view('learning.summary', compact('chapter', 'materials', 'completedMaterialIds', 'completedActivityIds'));
+        return view('learning.summary', compact('chapter', 'materials', 'completedMaterialIds', 'completedActivityIds', 'sidebarStageAccess'));
     }
 
     public function activity(Chapter $chapter, Activity $activity)
@@ -47,6 +58,15 @@ class LearningController extends Controller
         $chapter->load(['lessonMaterials', 'activities']);
         $completedMaterialIds = $this->getCompletedMaterialIds($chapter);
         $completedActivityIds = $this->getCompletedActivityIds($chapter);
+        $sidebarStageAccess   = $this->getSidebarStageAccess($chapter, $completedActivityIds);
+
+        $canProceedWithinStage = !$this->stageGateEnabled
+            || in_array($activity->id, $completedActivityIds);
+
+        $canProceedToNextStage = !$this->stageGateEnabled
+            || $chapter->activities
+                ->where('stage', $activity->stage)
+                ->every(fn($a) => in_array($a->id, $completedActivityIds));
 
         $submission = Submission::where('user_id', Auth::id())
             ->where('activity_id', $activity->id)
@@ -67,13 +87,26 @@ class LearningController extends Controller
             }
         }
 
-        // Investigate: navigasi lintas semua level. Lainnya: dalam level yang sama.
+        // Investigate/Modify/Make: navigasi lintas semua level — tapi pisahkan
+        // aktivitas yang punya level dari yang tidak punya level.
+        //
+        // Masalah sebelumnya: aktivitas berlevel dan tanpa-level dicampur dalam
+        // satu daftar siblings → atoms jadi "ada 2" karena soal null-level ikut terhitung.
+        //
+        // Fix: jika activity punya level → siblings hanya sesama berlevel
+        //       jika activity tanpa level → siblings hanya sesama tanpa level
         if (in_array($activity->stage, ['investigate', 'modify', 'make'])) {
             $siblings = $chapter->activities()
                 ->where('stage', $activity->stage)
+                ->when(
+                    $activity->level !== null,
+                    fn($q) => $q->whereNotNull('level'),  // berlevel: lintas semua level
+                    fn($q) => $q->whereNull('level'),     // tanpa level: sesama tanpa level
+                )
                 ->orderBy('order')
                 ->get();
         } else {
+            // Predict/Run: navigasi dalam level yang sama
             $siblings = $chapter->activities()
                 ->where('stage', $activity->stage)
                 ->when($activity->level, fn($q) => $q->where('level', $activity->level))
@@ -110,7 +143,12 @@ class LearningController extends Controller
                             ], $columns)
                         ];
                     } catch (\Exception $e) {
-                        // Abaikan jika tabel fisik belum dibuat di database
+                        // Tabel fisik belum dibuat di sandbox, atau ada masalah koneksi.
+                        // Halaman tetap bisa dimuat; tabel ini tidak muncul di panel DB.
+                        Log::warning('LearningController: Gagal DESCRIBE tabel sandbox', [
+                            'table' => $table->table_name,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
             }
@@ -135,6 +173,9 @@ class LearningController extends Controller
             'predictSubmission',
             'completedMaterialIds',
             'completedActivityIds',
+            'sidebarStageAccess',
+            'canProceedWithinStage',
+            'canProceedToNextStage',
             'prevActivity',
             'nextActivity',
             'currentNumber',
@@ -158,6 +199,32 @@ class LearningController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Hitung stage mana saja yang boleh diakses dari sidebar.
+     * Urutan: predict → run → investigate → modify → make
+     * Sebuah stage terbuka hanya jika SEMUA aktivitas stage sebelumnya sudah is_correct.
+     */
+    private function getSidebarStageAccess(Chapter $chapter, array $completedActivityIds): array
+    {
+        if (!$this->stageGateEnabled) {
+            return array_fill_keys(['predict', 'run', 'investigate', 'modify', 'make'], true);
+        }
+
+        $stageOrder = ['predict', 'run', 'investigate', 'modify', 'make'];
+        $access = [];
+        $previousStageCompleted = true; // predict selalu bisa diakses
+
+        foreach ($stageOrder as $stage) {
+            $access[$stage] = $previousStageCompleted;
+
+            $stageActivities = $chapter->activities->where('stage', $stage);
+            $previousStageCompleted = $stageActivities->isNotEmpty()
+                && $stageActivities->every(fn($a) => in_array($a->id, $completedActivityIds));
+        }
+
+        return $access;
     }
 
     private function getCompletedMaterialIds(Chapter $chapter): array

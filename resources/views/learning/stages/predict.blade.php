@@ -279,10 +279,18 @@
         @endif
         @php $runActivity = $chapter->activities->where('stage', 'run')->first(); @endphp
         @if($runActivity)
-            <a href="{{ route('learning.activity', [$chapter, $runActivity]) }}" class="nav-btn nav-btn-next">
-                Tahap Run
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </a>
+            @if($canProceedToNextStage)
+                <a href="{{ route('learning.activity', [$chapter, $runActivity]) }}" class="nav-btn nav-btn-next">
+                    Tahap Run
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            @else
+                <button class="nav-btn nav-btn-next" style="opacity:0.4;cursor:not-allowed;"
+                    onclick="showStageGateAlert('Selesaikan semua soal tahap Predict terlebih dahulu.')">
+                    Tahap Run
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            @endif
         @else
             <div></div>
         @endif

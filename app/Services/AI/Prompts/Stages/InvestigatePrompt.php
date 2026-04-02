@@ -20,6 +20,10 @@ class InvestigatePrompt
         $materials  = $context['materialsFormatted'];
         $tables     = $context['tablesFormatted'];
 
+        $refBlock = $activity->reference_answer
+            ? "Contoh jawaban ideal (gunakan sebagai acuan kualitas berpikir, bukan kunci jawaban):\n{$activity->reference_answer}\n\n"
+            : '';
+
         return SystemPrompt::get() . "\n"
             . ($materials ? $materials . "\n" : '')
             . ($tables    ? $tables    . "\n" : '')
@@ -27,6 +31,7 @@ class InvestigatePrompt
             . "Query SQL yang dianalisis:\n{$code}\n"
             . "Pertanyaan analisis: {$question}\n"
             . "Jawaban analisis siswa: {$answerText}\n\n"
+            . $refBlock
             . $this->getRubrik($level) . "\n\n"
             . 'Balas HANYA JSON (tanpa teks lain): '
             . '{"keruntutan":0-100,"berargumen":0-100,"kesimpulan":0-100,'

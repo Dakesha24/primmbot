@@ -8,10 +8,16 @@ use App\Models\SandboxTable;
 use App\Services\AI\EvaluationResult;
 use App\Services\AI\GroqClient;
 use App\Services\AI\ResponseParser;
+use App\Services\AI\TableNameRewriter;
 use App\Services\AI\Prompts\Stages\ModifyPrompt;
 use App\Services\AI\Prompts\Stages\MakePrompt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * Evaluator untuk jawaban SQL (Modify, Make).
+ * Menjalankan query siswa ke sandbox, membandingkan output, lalu mengirim ke AI untuk dinilai.
+ */
 class SqlEvaluator
 {
     public function __construct(
@@ -23,6 +29,7 @@ class SqlEvaluator
     {
         $answerCode = trim($submission->answer_code ?? '');
 
+        // Validasi: kode SQL wajib diisi
         if (empty($answerCode)) {
             return new EvaluationResult(
                 keruntutan: 0,
@@ -34,30 +41,22 @@ class SqlEvaluator
             );
         }
 
-        // Rewrite nama pendek → nama lengkap (sama seperti SqlRunnerController)
+        // ── Rewrite nama tabel pendek → nama lengkap di sandbox ──────────────
+        // Menggunakan TableNameRewriter yang sama dengan SqlRunnerController
+        // agar perilaku konsisten antara "Run" dan "Submit"
         if ($activity->sandbox_database_id) {
             $sandboxTables = SandboxTable::where('sandbox_database_id', $activity->sandbox_database_id)->get();
-            $tableMap = [];
-            foreach ($sandboxTables as $t) {
-                $tableMap[strtolower($t->display_name)] = $t->table_name;
-                $parts = explode('__', $t->table_name, 2);
-                if (isset($parts[1])) {
-                    $tableMap[strtolower($parts[1])] = $t->table_name;
-                }
-            }
-            uksort($tableMap, fn($a, $b) => strlen($b) - strlen($a));
-            foreach ($tableMap as $shortName => $fullName) {
-                if (strtolower($shortName) === strtolower($fullName)) continue;
-                $answerCode = preg_replace('/`' . preg_quote($shortName, '/') . '`/i', "`{$fullName}`", $answerCode);
-                $answerCode = preg_replace('/\b' . preg_quote($shortName, '/') . '\b/i', $fullName, $answerCode);
-            }
+            $tableMap      = TableNameRewriter::buildMap($sandboxTables);
+            $answerCode    = TableNameRewriter::rewrite($answerCode, $tableMap);
         }
 
-        // Jalankan query siswa ke sandbox (SELECT only)
+        // ── Jalankan query siswa ke sandbox (READ-ONLY) ───────────────────────
+        // Tidak dibungkus transaction karena ini SELECT saja
         try {
             $results      = DB::connection('sandbox')->select($answerCode);
             $actualOutput = array_map(fn($row) => (array) $row, $results);
         } catch (\Exception $e) {
+            // Query siswa menghasilkan SQL error — kembalikan feedback scaffolding
             return new EvaluationResult(
                 keruntutan: 20,
                 berargumen: 20,
@@ -69,26 +68,40 @@ class SqlEvaluator
             );
         }
 
+        // Ambil expected output dari aktivitas (output benar yang sudah ditetapkan guru)
         $expectedOutput = $activity->expected_output ?? [];
         if (is_string($expectedOutput)) {
             $expectedOutput = json_decode($expectedOutput, true) ?? [];
         }
 
+        // ── Bangun prompt evaluasi sesuai stage ───────────────────────────────
         $prompt = match ($activity->stage) {
             'modify' => (new ModifyPrompt())->buildEvaluationPrompt(
                             $activity, $submission, $context, $actualOutput, $expectedOutput),
             'make'   => (new MakePrompt())->buildEvaluationPrompt(
                             $activity, $submission, $context, $actualOutput, $expectedOutput),
+            // Fallback ke Make prompt jika stage tidak dikenal (seharusnya tidak terjadi)
             default  => (new MakePrompt())->buildEvaluationPrompt(
                             $activity, $submission, $context, $actualOutput, $expectedOutput),
         };
 
-        $response = $this->client->call($prompt, 300);
+        $groqResponse = $this->client->call($prompt, config('ai.eval_max_tokens', 300));
 
-        if (!$response) {
+        // ── Fallback: API tidak merespons ─────────────────────────────────────
+        if (!$groqResponse) {
+            Log::warning('SqlEvaluator: Groq API tidak merespons, menggunakan fallback scoring', [
+                'activity_id' => $activity->id,
+                'user_id'     => $submission->user_id,
+                'stage'       => $activity->stage,
+                'attempt'     => $submission->attempt,
+            ]);
             return $this->parser->fallback($activity->kkm, $submission->answer_text);
         }
 
-        return $this->parser->parseEvaluation($response, $activity->kkm);
+        $result               = $this->parser->parseEvaluation($groqResponse->content, $activity->kkm);
+        $result->tokensUsed   = $groqResponse->tokensUsed;
+        $result->responseTime = $groqResponse->responseTime;
+
+        return $result;
     }
 }

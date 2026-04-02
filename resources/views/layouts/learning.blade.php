@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $chapter->title }} - PRIMMBOT</title>
+    <title>{{ $chapter->title }} - PRIMMBASE</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -546,28 +546,35 @@
                 @endphp
                 @foreach ($stages as $stageKey => $stageLabel)
                     @php
-                        $stageActivities = $chapter->activities->where('stage', $stageKey);
-                        $firstActivity = $stageActivities->first();
-                        $isCompleted =
-                            $stageActivities->isNotEmpty() &&
-                            $stageActivities->every(fn($a) => in_array($a->id, $completedActivityIds ?? []));
-                        $isActive = isset($activity) && $activity->stage === $stageKey;
+                        $stageActivities  = $chapter->activities->where('stage', $stageKey);
+                        $firstActivity    = $stageActivities->first();
+                        $isCompleted      = $stageActivities->isNotEmpty()
+                            && $stageActivities->every(fn($a) => in_array($a->id, $completedActivityIds ?? []));
+                        $isActive         = isset($activity) && $activity->stage === $stageKey;
+                        $isAccessible     = $sidebarStageAccess[$stageKey] ?? true;
                     @endphp
                     @if ($firstActivity)
-                        <a href="{{ route('learning.activity', [$chapter, $firstActivity]) }}"
-                            class="sidebar-item {{ $isActive ? 'active' : '' }}">
-                            @if ($isCompleted)
-                                <span class="sidebar-check done"><svg width="10" height="10" fill="#4ade80"
-                                        viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clip-rule="evenodd" />
+                        @if ($isAccessible)
+                            <a href="{{ route('learning.activity', [$chapter, $firstActivity]) }}"
+                                class="sidebar-item {{ $isActive ? 'active' : '' }}">
+                                @if ($isCompleted)
+                                    <span class="sidebar-check done"><svg width="10" height="10" fill="#4ade80" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                     </svg></span>
-                            @else
-                                <span class="sidebar-check pending"></span>
-                            @endif
-                            {{ $stageLabel }}
-                        </a>
+                                @else
+                                    <span class="sidebar-check pending"></span>
+                                @endif
+                                {{ $stageLabel }}
+                            </a>
+                        @else
+                            <span class="sidebar-item" style="cursor:not-allowed;"
+                                onclick="showStageGateAlert('Selesaikan tahap sebelumnya terlebih dahulu.')">
+                                <span class="sidebar-check" style="width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                    <svg width="10" height="10" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                </span>
+                                {{ $stageLabel }}
+                            </span>
+                        @endif
                     @endif
                 @endforeach
             </div>
@@ -643,6 +650,25 @@
     </script>
 
     @stack('scripts')
+
+    {{-- Stage Gate Notification --}}
+    <div id="stage-gate-notice" style="
+        display:none;position:fixed;top:4.5rem;left:50%;transform:translateX(-50%);
+        z-index:300;background:rgba(15,32,68,0.95);border:1px solid rgba(220,38,38,0.4);
+        border-radius:10px;padding:0.65rem 1.2rem;color:#fca5a5;font-size:0.85rem;
+        font-weight:600;pointer-events:none;white-space:nowrap;backdrop-filter:blur(12px);
+        box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <span id="stage-gate-notice-text"></span>
+    </div>
+    <script>
+        function showStageGateAlert(message) {
+            const notice = document.getElementById('stage-gate-notice');
+            document.getElementById('stage-gate-notice-text').textContent = message;
+            notice.style.display = 'block';
+            clearTimeout(notice._hideTimer);
+            notice._hideTimer = setTimeout(() => { notice.style.display = 'none'; }, 2500);
+        }
+    </script>
 </body>
 
 </html>

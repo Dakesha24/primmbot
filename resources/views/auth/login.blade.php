@@ -1,4 +1,4 @@
-<x-layouts.auth title="Masuk - PRIMMBOT">
+<x-layouts.auth title="Masuk - PRIMMBASE">
 
     <h2 class="auth-title">Masuk</h2>
 

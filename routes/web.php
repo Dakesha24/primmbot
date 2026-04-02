@@ -148,6 +148,9 @@ Route::prefix('admin')
         Route::patch('/students/{student}/toggle-active', [AdminStudentController::class, 'toggleActive'])->name('students.toggleActive');
         Route::patch('/students/{student}/password', [AdminStudentController::class, 'updatePassword'])->name('students.updatePassword');
 
+        // AI Monitor
+        Route::get('/ai-monitor', [\App\Http\Controllers\Admin\AiMonitorController::class, 'index'])->name('ai-monitor.index');
+
         // Sandbox Databases
         Route::get('/sandbox', [AdminSandboxController::class, 'index'])->name('sandbox.index');
         Route::post('/sandbox', [AdminSandboxController::class, 'store'])->name('sandbox.store');

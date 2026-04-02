@@ -325,7 +325,7 @@
                                             @endif
                                             @if ($sub->ai_feedback)
                                                 <div class="ai-box" style="margin-top:4px;">
-                                                    <div class="ai-lbl">Feedback PRIMMBOT</div>
+                                                    <div class="ai-lbl">Feedback PRIMMBASE</div>
                                                     <div class="ai-txt">{{ $sub->ai_feedback }}</div>
                                                 </div>
                                             @endif
@@ -339,7 +339,7 @@
                                             onclick="toggleChat(this)"
                                             style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:rgba(255,255,255,0.04);border:none;cursor:pointer;font-family:inherit;">
                                             <span style="font-size:0.65rem;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:0.06em;">
-                                                Percakapan dengan PRIMMBOT
+                                                Percakapan dengan PRIMMBASE
                                                 <span style="font-weight:600;color:#475569;margin-left:4px;">({{ $activity->chat_logs->count() }} pesan)</span>
                                             </span>
                                             <svg class="chat-chevron" width="13" height="13" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24" style="transition:transform 0.2s;flex-shrink:0;">
@@ -354,7 +354,7 @@
                                                         <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.55;">{{ $log->prompt_sent }}</div>
                                                     </div>
                                                     <div style="background:rgba(37,99,235,0.08);border:1px solid rgba(96,165,250,0.15);border-radius:6px;padding:7px 10px;">
-                                                        <div style="font-size:0.62rem;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">PRIMMBOT</div>
+                                                        <div style="font-size:0.62rem;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">PRIMMBASE</div>
                                                         <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.55;">{{ $log->response_received }}</div>
                                                     </div>
                                                 </div>

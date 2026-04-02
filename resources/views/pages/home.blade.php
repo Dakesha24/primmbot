@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PRIMMBOT</title>
+    <title>PRIMMBASE</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -378,7 +378,7 @@
 
     <!-- Navbar -->
     <nav>
-        <div class="logo"><img src="{{ asset('assets/images/logo.png') }}" alt="PRIMMBOT"><span class="logo-text">PRIMM<span>BOT</span></span></div>
+        <div class="logo"><img src="{{ asset('assets/images/logo.png') }}" alt="PRIMMBASE"><span class="logo-text">PRIMM<span>BASE</span></span></div>
         <div class="nav-links">
             <a href="#features">Tentang</a>
             <a href="#faq">FAQ</a>
@@ -414,7 +414,7 @@
             <div class="hero-visual fade-up fade-up-d4">
                 <div class="img-glow"></div>
                 {{-- Ganti src dengan gambar Anda --}}
-                <img src="{{ asset('assets/images/hero.png') }}" alt="PRIMMBOT Hero"
+                <img src="{{ asset('assets/images/hero.png') }}" alt="PRIMMBASE Hero"
                     onerror="this.style.display='none'; this.parentElement.querySelector('.img-placeholder').style.display='flex';">
                 <div class="img-placeholder"
                     style="display:none; width:100%; aspect-ratio:4/3; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.15); border-radius:16px; align-items:center; justify-content:center; color:#475569; font-size:0.9rem; position:relative; z-index:2;">
@@ -447,7 +447,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; {{ date('Y') }} PRIMMBOT — Platform e-LKPD untuk Logical Thinking</p>
+        <p>&copy; {{ date('Y') }} PRIMMBASE — Platform e-LKPD untuk Logical Thinking</p>
     </footer>
 
 </body>

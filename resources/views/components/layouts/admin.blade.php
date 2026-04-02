@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Admin' }} — PRIMMBOT</title>
+    <title>{{ $title ?? 'Admin' }} — PRIMMBASE</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -393,7 +393,7 @@
     <!-- Topbar -->
     <header class="admin-topbar">
         <div class="topbar-left">
-            <span class="topbar-brand"><img src="/assets/images/logo.png" alt="PRIMMBOT">PRIMMBOT</span>
+            <span class="topbar-brand"><img src="/assets/images/logo.png" alt="PRIMMBASE">PRIMMBASE</span>
             <span class="topbar-badge">Admin Panel</span>
             <span class="topbar-page">{{ $title ?? 'Dashboard' }}</span>
         </div>
@@ -503,6 +503,17 @@
                 <line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/>
             </svg>
             Kelas
+        </a>
+
+        <span class="nav-label">Sistem</span>
+
+        <a href="{{ route('admin.ai-monitor.index') }}"
+            class="nav-item {{ request()->routeIs('admin.ai-monitor.*') ? 'active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            Monitor AI
         </a>
     </aside>
 

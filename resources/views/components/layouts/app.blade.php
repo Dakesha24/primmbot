@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'PRIMMBOT' }}</title>
+    <title>{{ $title ?? 'PRIMMBASE' }}</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/icon-logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -457,7 +457,7 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-left">
-            <a href="{{ route('dashboard') }}" class="nav-logo"><img src="/assets/images/logo.png" alt="PRIMMBOT"><span class="nav-brand">PRIMM<span>BOT</span></span></a>
+            <a href="{{ route('dashboard') }}" class="nav-logo"><img src="/assets/images/logo.png" alt="PRIMMBASE"><span class="nav-brand">PRIMM<span>BASE</span></span></a>
             <div class="nav-menu">
                 <a href="{{ route('dashboard') }}"
                     class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>

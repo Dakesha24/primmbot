@@ -1,4 +1,4 @@
-<x-layouts.app title="{{ $course->title }} - PRIMMBOT">
+<x-layouts.app title="{{ $course->title }} - PRIMMBASE">
 
     @if (session('enroll_success'))
         <style>

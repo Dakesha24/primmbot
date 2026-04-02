@@ -11,5 +11,7 @@ class EvaluationResult
         public int    $total,
         public bool   $isCorrect,
         public string $feedback,
+        public int    $tokensUsed   = 0,
+        public float  $responseTime = 0.0,
     ) {}
 }

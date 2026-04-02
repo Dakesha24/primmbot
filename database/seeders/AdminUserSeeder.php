@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
     {
         $admin = User::create([
             'username' => 'admin',
-            'email' => 'admin@primmbot.test',
+            'email' => 'admin@primmbase.test',
             'password' => Hash::make('password'),
             'role' => 'admin',
         ]);
@@ -25,7 +25,7 @@ class AdminUserSeeder extends Seeder
 
         $student = User::create([
             'username' => 'siswa01',
-            'email' => 'siswa01@primmbot.test',
+            'email' => 'siswa01@primmbase.test',
             'password' => Hash::make('password'),
             'role' => 'student',
         ]);

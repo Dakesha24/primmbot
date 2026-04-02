@@ -222,6 +222,16 @@
                     <div class="field-hint" style="margin-top:4px;">Skor minimum (0–100) agar siswa dinyatakan lulus. Default: 70</div>
                 </div>
 
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:600;color:#1a2332;">Contoh Jawaban Ideal <span style="font-size:11px;font-weight:400;color:#94a3b8;">(Opsional — Acuan Kualitas Berpikir untuk AI)</span></label>
+                    <textarea name="reference_answer" rows="5"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #dde1ea;border-radius:5px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;"
+                        placeholder="Tulis contoh jawaban yang menunjukkan kualitas reasoning yang diharapkan. AI menggunakan ini sebagai acuan penilaian — bukan untuk mencocokkan kata per kata.">{{ old('reference_answer', $activity->reference_answer) }}</textarea>
+                    <div class="field-hint" style="margin-top:5px;">Jika diisi: AI menggunakan ini untuk menilai kualitas argumen. Jika kosong: AI hanya menilai dari rubrik.</div>
+                </div>
+
                 <div class="form-actions">
                     <a href="{{ route('admin.chapters.content', [$course, $chapter]) }}"
                         class="btn-secondary" style="text-decoration:none;">Batal</a>

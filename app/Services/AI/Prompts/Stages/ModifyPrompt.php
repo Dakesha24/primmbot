@@ -24,6 +24,10 @@ class ModifyPrompt
         $actualJson   = mb_substr(json_encode($actualOutput,   JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), 0, 600);
         $expectedJson = mb_substr(json_encode($expectedOutput, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), 0, 600);
 
+        $refBlock = $activity->reference_answer
+            ? "Contoh jawaban ideal (gunakan sebagai acuan kualitas berpikir, bukan kunci jawaban):\n{$activity->reference_answer}\n\n"
+            : '';
+
         return SystemPrompt::get() . "\n"
             . ($tables ? $tables . "\n" : '')
             . "Tahap: MODIFY\n"
@@ -33,6 +37,7 @@ class ModifyPrompt
             . "Penjelasan siswa: {$answerText}\n"
             . "Output aktual query siswa:\n{$actualJson}\n"
             . "Output yang diharapkan:\n{$expectedJson}\n\n"
+            . $refBlock
             . $this->getRubrik() . "\n\n"
             . "Nilai output: jika output siswa secara logika sesuai (kolom, data, jumlah baris), "
             . "tetap beri skor tinggi meski format sedikit berbeda.\n"

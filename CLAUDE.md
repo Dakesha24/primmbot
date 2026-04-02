@@ -1,8 +1,8 @@
-# PRIMMBOT — Panduan Proyek untuk Claude
+# PRIMMBASE — Panduan Proyek untuk Claude
 
 ## 1. Identitas Proyek
 
-- **Nama:** PRIMMBOT
+- **Nama:** PRIMMBASE
 - **Tujuan:** Platform e-LKPD (Lembar Kerja Peserta Didik digital) untuk meningkatkan *Logical Thinking* siswa SMK pada materi Basis Data (SQL Join & DCL)
 - **Model Pembelajaran:** PRIMM — Predict, Run, Investigate, Modify, Make
 - **Konsep AI:** Virtual Assistant berperan sebagai MKO (*More Knowledgeable Other*) menggunakan strategi **Scaffolding** (membimbing lewat pertanyaan pemantik, tidak pernah memberi jawaban langsung)
@@ -268,7 +268,138 @@ primmbot/
 
 ---
 
-## 8. Konvensi & Hal Penting
+## 8. Alur Lengkap Siswa (Login → LKPD)
+
+### Fase 1 — Autentikasi
+1. Siswa buka halaman login (`/login`)
+2. Login via **email + password** atau **Google OAuth** (`/auth/google/redirect`)
+3. Setelah login → dicek middleware `auth` + `verified`
+
+### Fase 2 — Lengkapi Profil (wajib sekali, sebelum bisa ke mana pun)
+- Middleware `profile.complete` (EnsureProfileComplete) berjalan di semua route siswa
+- Jika profil belum lengkap → otomatis redirect ke `/profile`
+- Field wajib diisi: `full_name`, `nim`, `gender`, `kelas_id`
+- Jika semua terisi (`isComplete() = true`) → bisa lanjut
+
+### Fase 3 — Dashboard & Daftar Kelas
+- Siswa masuk ke `/dashboard`
+- Buka `/kelas` → melihat daftar Course yang tersedia
+- Klik Course → halaman detail (`/kelas/{course}`) → klik **Enroll** untuk mendaftar
+- Setelah enroll → tombol "Mulai Belajar" aktif menuju chapter pertama
+
+### Fase 4 — Membaca Materi (sebelum LKPD)
+Setiap Chapter punya 5 tipe LessonMaterial yang dibaca berurutan via sidebar:
+1. `pendahuluan` — konteks dan latar belakang materi
+2. `petunjuk_belajar` — cara menggunakan platform
+3. `tujuan` — tujuan pembelajaran
+4. `prasyarat` — pengetahuan awal yang dibutuhkan
+5. `ringkasan_materi` — ringkasan konsep SQL
+
+Route: `/belajar/{chapter}/materi/{type}`
+
+Setiap halaman materi punya tombol **Selanjutnya** → klik = menandai materi selesai (`material_completions`). Progres disimpan per siswa.
+
+### Fase 5 — LKPD: Tahapan PRIMM
+
+Route aktivitas: `/belajar/{chapter}/aktivitas/{activity}`
+
+**Kunci navigasi (Stage Gate):**
+- Dikendalikan oleh `$stageGateEnabled` di `LearningController` (default `true`)
+- `canProceedWithinStage` = boleh ke soal berikutnya dalam stage yang sama → hanya jika soal saat ini sudah `is_correct`
+- `canProceedToNextStage` = boleh akses stage berikutnya dari sidebar → hanya jika **semua** soal di stage saat ini sudah `is_correct`
+- Urutan stage yang terkunci: Predict → Run → Investigate → Modify → Make
+
+**Alur di setiap soal:**
+
+```
+Soal tampil
+    │
+    ├─ [opsional] Siswa CHAT dengan PRIMM Bot
+    │       → kirim pesan ke POST /api/chat
+    │       → AI menjawab dengan scaffolding (pertanyaan pemantik)
+    │       → riwayat chat disimpan di ai_interaction_logs (type='chat')
+    │       → riwayat dimuat ulang saat halaman di-refresh
+    │
+    ├─ [predict/run/investigate] Siswa isi textarea answer_text
+    ├─ [modify/make] Siswa tulis SQL di editor → klik Run ▶ untuk coba
+    │       → POST /api/sql/run → eksekusi ke primmbot_sandbox
+    │       → DML (INSERT/UPDATE/DELETE) di-rollback otomatis
+    │
+    └─ Siswa klik SUBMIT
+            → POST /api/submission/submit
+            → AI mengevaluasi jawaban → memberi skor per indikator (0–100)
+            → PHP menghitung rata-rata → simpan ke submissions
+            → Feedback AI tampil di chat widget (scaffolding, bukan evaluatif)
+            → Jika score >= activity.kkm → is_correct = true → soal dianggap selesai
+            → Jika belum mencapai KKM → bisa submit ulang (attempt bertambah)
+```
+
+**Feedback Guru (opsional):**
+- Jika guru sudah review → blok "Feedback Guru" muncul di atas chat widget
+- Skor guru menggantikan (override) skor AI
+- Siswa perlu refresh manual untuk melihat feedback guru
+
+### Ringkasan Navigasi Siswa
+
+```
+Login
+  └─ Lengkapi Profil (sekali saja)
+       └─ Dashboard
+            └─ Daftar Kelas → Enroll
+                 └─ Detail Course → Chapter
+                      ├─ Materi 1–5 (baca + klik Selanjutnya)
+                      └─ LKPD Aktivitas
+                           ├─ Predict (1 soal)
+                           ├─ Run (1 soal, lihat prediksi sebelumnya)
+                           ├─ Investigate (4 soal: Atoms→Blocks→Relations→Macro)
+                           ├─ Modify (3 soal: Level 1→2→3)
+                           └─ Make (3 soal: Level 1→2→3)
+```
+
+---
+
+## 9. Aktivitas Siswa per Tahap PRIMM
+
+### Predict
+- **Ditampilkan:** `description` (deskripsi soal + tabel konteks), `code_snippet` read-only (tidak bisa dijalankan), `question_text` (pertanyaan prediksi)
+- **Diinput siswa:** `answer_text` — teks prediksi output beserta alasan
+- **Evaluasi AI:** kualitas reasoning prediksi (teks)
+
+### Run
+- **Ditampilkan:** SQL Editor dengan `code_snippet` yang bisa dijalankan (Run ▶), output tabel, kotak "Prediksi Anda" (dari tahap Predict), `question_text` (pertanyaan refleksi)
+- **Diinput siswa:** `answer_text` — teks refleksi (perbandingan prediksi vs output nyata)
+- **Evaluasi AI:** kualitas refleksi (teks)
+
+### Investigate
+- **Ditampilkan:** SQL Editor dengan `code_snippet` editable + Run ▶ + Reset, output tabel, level indicator (Atoms / Blocks / Relations / Macro), `question_text` (pertanyaan analisis)
+- **Diinput siswa:** `answer_text` — teks analisis cara kerja query
+- **Evaluasi AI:** kualitas analisis sesuai level (teks)
+
+### Modify
+- **Ditampilkan:** Panel Database + ERD (kiri), level indicator (Level 1/2/3), `question_text` (perintah SQL), SQL Editor diisi `editor_default_code` (kode awal sudah ada, tinggal dimodifikasi) + Run ▶ + Reset, `description` (pertanyaan penjelasan)
+- **Diinput siswa:** `answer_code` (SQL hasil modifikasi) + `answer_text` (penjelasan perubahan)
+- **Evaluasi AI:** eksekusi `answer_code` → bandingkan output dengan `expected_output` → evaluasi `answer_text`
+
+### Make
+- **Ditampilkan:** Panel Database + ERD (kiri), level indicator (Level 1/2/3), `question_text` (perintah SQL), SQL Editor **kosong** + Run ▶, `description` (pertanyaan penjelasan, jika ada)
+- **Diinput siswa:** `answer_code` (SQL dari nol) + `answer_text` (penjelasan query)
+- **Evaluasi AI:** sama seperti Modify (eksekusi + bandingkan output + evaluasi penjelasan)
+
+### Ringkasan Input
+
+| Tahap | `answer_text` | `answer_code` | Editor SQL |
+|---|---|---|---|
+| Predict | Teks prediksi | — | Read-only, tidak bisa run |
+| Run | Teks refleksi | — | Editable, bisa run |
+| Investigate | Teks analisis | — | Editable, bisa run |
+| Modify | Teks penjelasan | SQL modifikasi | Editable, ada kode awal (`editor_default_code`) |
+| Make | Teks penjelasan | SQL dari nol | Editable, kosong |
+
+Di semua tahap: siswa bisa **chat bebas** dengan PRIMM Bot (scaffolding) sebelum submit.
+
+---
+
+## 10. Konvensi & Hal Penting
 
 - **Frontend:** Blade + Vanilla CSS, style inline — **bukan Tailwind utility class**
 - **Dua koneksi DB:** `mysql` (utama) dan `sandbox` (query siswa) — jangan campur
@@ -286,7 +417,7 @@ primmbot/
 
 ---
 
-## 9. Backlog / TODO
+## 11. Backlog / TODO
 
 ### `reference_answer` — Acuan Kualitas Berpikir untuk Evaluasi AI
 

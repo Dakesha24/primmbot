@@ -1,4 +1,4 @@
-<x-layouts.app title="Profil - PRIMMBOT">
+<x-layouts.app title="Profil - PRIMMBASE">
 
     <div class="page-header fade-up">
         <h1 class="page-title">Profil Saya</h1>

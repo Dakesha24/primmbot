@@ -40,6 +40,7 @@ class ActivityController extends Controller
             'level'              => 'nullable|string',
             'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
             'kkm'                => 'nullable|integer|min:0|max:100',
+            'reference_answer'   => 'nullable|string',
         ];
 
         $validated = $request->validate($rules);
@@ -89,6 +90,7 @@ class ActivityController extends Controller
             'level'              => 'nullable|string',
             'sandbox_database_id'=> 'nullable|exists:sandbox_databases,id',
             'kkm'                => 'nullable|integer|min:0|max:100',
+            'reference_answer'   => 'nullable|string',
         ];
 
         $validated = $request->validate($rules);

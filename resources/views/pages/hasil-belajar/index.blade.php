@@ -1,4 +1,4 @@
-<x-layouts.app title="Hasil Belajar - PRIMMBOT">
+<x-layouts.app title="Hasil Belajar - PRIMMBASE">
 
     <style>
         .hb-header { margin-bottom: 2rem; }

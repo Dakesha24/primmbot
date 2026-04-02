@@ -24,6 +24,10 @@ class RunPrompt
             ? "Jawaban Predict siswa sebelumnya: {$predictAnswer}\n"
             : '';
 
+        $refBlock = $activity->reference_answer
+            ? "Contoh jawaban ideal (gunakan sebagai acuan kualitas berpikir, bukan kunci jawaban):\n{$activity->reference_answer}\n\n"
+            : '';
+
         return SystemPrompt::get() . "\n"
             . ($materials ? $materials . "\n" : '')
             . ($tables    ? $tables    . "\n" : '')
@@ -32,6 +36,7 @@ class RunPrompt
             . $predictBlock
             . "Pertanyaan refleksi: {$question}\n"
             . "Jawaban refleksi siswa: {$answerText}\n\n"
+            . $refBlock
             . $this->getRubrik() . "\n\n"
             . 'Balas HANYA JSON (tanpa teks lain): '
             . '{"keruntutan":0-100,"berargumen":0-100,"kesimpulan":0-100,'

@@ -103,7 +103,7 @@
 {{-- Header --}}
 <div class="doc-header">
     <h1>Laporan Hasil Belajar — {{ $course->title }}</h1>
-    <p>PRIMMBOT · Platform e-LKPD Basis Data</p>
+    <p>PRIMMBASE · Platform e-LKPD Basis Data</p>
 </div>
 
 {{-- Identitas --}}
@@ -217,7 +217,7 @@
     </div>
 @endforeach
 
-<div class="footer">PRIMMBOT — Platform e-LKPD Basis Data · {{ $identity['sekolah'] }}</div>
+<div class="footer">PRIMMBASE — Platform e-LKPD Basis Data · {{ $identity['sekolah'] }}</div>
 
 </div>
 </body>

@@ -9,6 +9,22 @@ class Activity extends Model
 {
     use HasFactory;
 
+    // ── Konstanta Stage & Level ───────────────────────────────────────────────
+    // Didefinisikan di sini agar tidak tersebar sebagai magic string di banyak file.
+    // Gunakan Activity::STAGE_ORDER, Activity::LEVEL_INVESTIGATE, dst.
+
+    /** Urutan tahap PRIMM — urutan ini menentukan alur progress siswa */
+    const STAGE_ORDER = ['predict', 'run', 'investigate', 'modify', 'make'];
+
+    /** Urutan level untuk tahap Investigate */
+    const LEVEL_INVESTIGATE = ['atoms', 'blocks', 'relations', 'macro'];
+
+    /** Urutan level untuk tahap Modify dan Make */
+    const LEVEL_TASK = ['mudah', 'sedang', 'tantang'];
+
+    /** Nilai KKM default jika tidak diatur per aktivitas */
+    const DEFAULT_KKM = 70;
+
     protected $fillable = [
         'chapter_id',
         'sandbox_database_id',
@@ -21,6 +37,7 @@ class Activity extends Model
         'reference_sql',
         'expected_output',
         'kkm',
+        'reference_answer',
         'order',
     ];
 

@@ -573,14 +573,15 @@
                             <div></div>
                         @endif
                         @if ($nextActivity)
-                            @if ($submission)
+                            @if ($canProceedWithinStage)
                                 <a href="{{ route('learning.activity', [$chapter, $nextActivity]) }}" style="{{ $navStyle }}"
                                     onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#cbd5e1'">
                                     Soal Berikutnya
                                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 </a>
                             @else
-                                <span title="Selesaikan soal ini terlebih dahulu" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#475569;font-size:0.85rem;font-weight:600;cursor:not-allowed;">
+                                <span onclick="showStageGateAlert('Selesaikan soal ini terlebih dahulu.')"
+                                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#475569;font-size:0.85rem;font-weight:600;cursor:not-allowed;">
                                     Soal Berikutnya
                                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 </span>
@@ -670,10 +671,18 @@
         @endif
         @php $modifyActivity = $chapter->activities->where('stage', 'modify')->first(); @endphp
         @if($modifyActivity)
-            <a href="{{ route('learning.activity', [$chapter, $modifyActivity]) }}" class="nav-btn nav-btn-next">
-                Tahap Modify
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </a>
+            @if($canProceedToNextStage)
+                <a href="{{ route('learning.activity', [$chapter, $modifyActivity]) }}" class="nav-btn nav-btn-next">
+                    Tahap Modify
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            @else
+                <button class="nav-btn nav-btn-next" style="opacity:0.4;cursor:not-allowed;"
+                    onclick="showStageGateAlert('Selesaikan semua soal tahap Investigate terlebih dahulu.')">
+                    Tahap Modify
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            @endif
         @else
             <div></div>
         @endif

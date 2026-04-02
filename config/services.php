@@ -42,8 +42,14 @@ return [
     ],
 
     'groq' => [
-        'api_key' => env('GROQ_API_KEY'),
-        'model'   => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+        // Daftarkan sebanyak yang dibutuhkan — key null (belum diisi di .env) otomatis diabaikan.
+        // Urutan = prioritas: key-1 dipakai pertama, key-2 backup, key-3 cadangan, dst.
+        'api_keys' => array_values(array_filter([
+            env('GROQ_API_KEY'),    // akun utama
+            env('GROQ_API_KEY_2'),  // backup 1
+            env('GROQ_API_KEY_3'),  // backup 2 (opsional)
+        ])),
+        'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
     ],
 
 ];

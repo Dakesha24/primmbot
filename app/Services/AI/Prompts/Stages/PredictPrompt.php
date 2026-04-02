@@ -19,6 +19,10 @@ class PredictPrompt
         $materials  = $context['materialsFormatted'];
         $tables     = $context['tablesFormatted'];
 
+        $refBlock = $activity->reference_answer
+            ? "Contoh jawaban ideal (gunakan sebagai acuan kualitas berpikir, bukan kunci jawaban):\n{$activity->reference_answer}\n\n"
+            : '';
+
         return SystemPrompt::get() . "\n"
             . ($materials ? $materials . "\n" : '')
             . ($tables    ? $tables    . "\n" : '')
@@ -26,6 +30,7 @@ class PredictPrompt
             . "Query SQL yang diberikan:\n{$code}\n"
             . "Pertanyaan: {$question}\n"
             . "Jawaban siswa: {$answerText}\n\n"
+            . $refBlock
             . $this->getRubrik() . "\n\n"
             . 'Balas HANYA JSON (tanpa teks lain): '
             . '{"keruntutan":0-100,"berargumen":0-100,"kesimpulan":0-100,'

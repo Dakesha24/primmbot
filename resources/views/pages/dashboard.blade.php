@@ -1,4 +1,4 @@
-<x-layouts.app title="Dashboard - PRIMMBOT">
+<x-layouts.app title="Dashboard - PRIMMBASE">
 
     <style>
         .grid-2 {
