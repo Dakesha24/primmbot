@@ -20,7 +20,7 @@ class Course extends Model
     public function coverImageUrl(): string
     {
         if ($this->cover_image) {
-            return asset('storage/' . $this->cover_image);
+            return asset($this->cover_image);
         }
         return asset('assets/images/cover-course-default.png');
     }

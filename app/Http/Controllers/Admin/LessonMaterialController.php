@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Chapter;
 use App\Models\LessonMaterial;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class LessonMaterialController extends Controller
 {
@@ -65,10 +66,15 @@ class LessonMaterialController extends Controller
             'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        $path = $request->file('image')->store('materials', 'public');
+        $file = $request->file('image');
+        $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+        $dir = $_SERVER['DOCUMENT_ROOT'] . '/materials';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        $file->move($dir, $filename);
+        $path = 'materials/' . $filename;
 
         return response()->json([
-            'url' => asset('storage/' . $path),
+            'url' => asset($path),
         ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
@@ -32,9 +33,15 @@ class CourseController extends Controller
         // Geser semua kelas yang urutannya >= newOrder ke bawah
         Course::where('order', '>=', $newOrder)->increment('order');
 
-        $coverPath = $request->hasFile('cover_image')
-            ? $request->file('cover_image')->store('courses/covers', 'public')
-            : null;
+        $coverPath = null;
+        if ($request->hasFile('cover_image')) {
+            $file = $request->file('cover_image');
+            $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+            $dir = $_SERVER['DOCUMENT_ROOT'] . '/courses/covers';
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $file->move($dir, $filename);
+            $coverPath = 'courses/covers/' . $filename;
+        }
 
         Course::create([
             'title'        => $request->title,
@@ -76,10 +83,19 @@ class CourseController extends Controller
         $coverPath = $course->cover_image;
 
         if ($request->hasFile('cover_image')) {
-            if ($coverPath) Storage::disk('public')->delete($coverPath);
-            $coverPath = $request->file('cover_image')->store('courses/covers', 'public');
+            if ($coverPath) {
+                $old = $_SERVER['DOCUMENT_ROOT'] . '/' . $coverPath;
+                if (file_exists($old)) unlink($old);
+            }
+            $file = $request->file('cover_image');
+            $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+            $dir = $_SERVER['DOCUMENT_ROOT'] . '/courses/covers';
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $file->move($dir, $filename);
+            $coverPath = 'courses/covers/' . $filename;
         } elseif ($request->boolean('remove_cover') && $coverPath) {
-            Storage::disk('public')->delete($coverPath);
+            $old = $_SERVER['DOCUMENT_ROOT'] . '/' . $coverPath;
+            if (file_exists($old)) unlink($old);
             $coverPath = null;
         }
 
@@ -97,7 +113,8 @@ class CourseController extends Controller
     public function destroy(Course $course)
     {
         if ($course->cover_image) {
-            Storage::disk('public')->delete($course->cover_image);
+            $old = $_SERVER['DOCUMENT_ROOT'] . '/' . $course->cover_image;
+            if (file_exists($old)) unlink($old);
         }
         $course->delete();
         return redirect()->route('admin.courses.index')->with('success', 'LKPD berhasil dihapus.');

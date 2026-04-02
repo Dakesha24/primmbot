@@ -30,7 +30,7 @@ class ProfileController extends Controller
         return view('pages.profile.edit', compact('user', 'profile', 'kelasOptions'));
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
@@ -49,7 +49,7 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             // Hapus avatar lama jika ada
             if ($profile && $profile->avatar && !str_starts_with($profile->avatar, 'http')) {
-                $oldPath = public_path('avatars/' . basename($profile->avatar));
+                $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/avatars/' . basename($profile->avatar);
                 if (File::exists($oldPath)) {
                     File::delete($oldPath);
                 }
@@ -57,7 +57,7 @@ class ProfileController extends Controller
 
             $file = $request->file('avatar');
             $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('avatars'), $filename);
+            $file->move($_SERVER['DOCUMENT_ROOT'] . '/avatars', $filename);
             $data['avatar'] = 'avatars/' . $filename;
         }
 
@@ -102,7 +102,7 @@ class ProfileController extends Controller
 
         // Hapus avatar jika ada
         if ($user->profile && $user->profile->avatar && !str_starts_with($user->profile->avatar, 'http')) {
-            $oldPath = public_path('avatars/' . basename($user->profile->avatar));
+            $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/avatars/' . basename($user->profile->avatar);
             if (File::exists($oldPath)) {
                 File::delete($oldPath);
             }
